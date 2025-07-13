@@ -1,228 +1,85 @@
 const express = require("express");
-const app = express();
-const mongoose = require("mongoose");
-const cookieParser = require("cookie-parser");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const connectDB = require("./utils/db");
 const dotenv = require("dotenv");
-const User = require("./models/User");
-const Message = require("./models/Message");
+const userRoutes = require("./routes/user.Routes");
+const chatRoutes = require("./routes/chat.Routes");
+const messageRoutes = require("./routes/message.Routes");
+const { notFound, errorHandler } = require("./middlewares/error.Middleware");
+const path = require("path");
 const cors = require("cors");
-const ws = require("ws");
-const fs = require("fs");
 
 dotenv.config();
-mongoose.connect(process.env.mongoUrl, {
-  serverSelectionTimeoutMS: 3000,
-});
-
-const db = mongoose.connection;
-
-db.on('connected', () => {
-  const port = db.port || 'default port'; // Fallback if port is not directly available
-  console.log(`Database connected successfully at port number: ${port}`);
-});
-
-// Handle error events
-db.on('error', (error) => {
-  console.error('Error connecting to the database:', error);
-});
-
-const secretKey = process.env.jwtSecretKey;
-const bcryptSalt = bcrypt.genSaltSync(10);
+connectDB();
+const app = express();
 
 app.use(express.json());
-app.use(cookieParser());
-app.use(
-  cors({
-    credentials: true,
-    origin: process.env.baseURL,
-  })
-);
-app.use("/uploads", express.static(__dirname + "/uploads"));
+app.use(cors());
 
-app.get("/test", (req, res) => {
-  res.json("test ok");
-});
+app.use("/api/user", userRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/message", messageRoutes);
 
-app.get("/profile", (req, res) => {
-  const token = req.cookies?.token;
-  if (token) {
-    jwt.verify(token, secretKey, {}, (err, userData) => {
-      if (err) throw err;
-      res.json(userData);
-    });
-  } else {
-    res.status(401).json("no token");
-  }
-});
 
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  const foundUser = await User.findOne({ username });
-  if (foundUser) {
-    const passOk = bcrypt.compareSync(password, foundUser.password);
-    if (passOk) {
-      jwt.sign(
-        { userId: foundUser._id, username },
-        secretKey,
-        {},
-        (err, token) => {
-          res.cookie("token", token, { sameSite: "none", secure: true }).json({
-            id: foundUser._id,
-          });
-        }
-      );
-    }
-  }
-});
+const __dirname1 = path.resolve();
 
-app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
-    const createdUser = await User.create({
-      username: username,
-      password: hashedPassword,
-    });
-    jwt.sign({ userId: createdUser._id }, secretKey, {}, (err, token) => {
-      if (err) throw err;
-      res.cookie("token", token).status(201).json({
-        id: createdUser._id,
-        username: username,
-      });
-    });
-  } catch (err) {
-    if (err) throw err;
-    res.status(500).json("error");
-  }
-});
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname1, "/frontend/build")));
 
-app.get("/people", async (req, res) => {
-  const users = await User.find({}, { _id: 1, username: 1 });
-  res.json(users);
-});
-
-app.post("/logout", (req, res) => {
-  res.cookie("token", "", { sameSite: "none", secure: true }).json("ok");
-});
-
-async function getUserDataFromRequest(req) {
-  return new Promise((resolve, reject) => {
-    const token = req.cookies?.token;
-    if (token) {
-      jwt.verify(token, secretKey, {}, (err, userData) => {
-        if (err) throw err;
-        resolve(userData);
-      });
-    } else {
-      reject("no token");
-    }
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(__dirname1, "frontend", "build", "index.html"))
+  );
+} else {
+  app.get("/", (req, res) => {
+    res.send("API is running..");
   });
 }
 
-app.get("/messages/:userId", async (req, res) => {
-  const { userId } = req.params;
-  const userData = await getUserDataFromRequest(req);
-  const ourUserId = userData.userId;
-  const messages = await Message.find({
-    sender: { $in: [userId, ourUserId] },
-    recipient: { $in: [userId, ourUserId] },
-  }).sort({ createdAt: 1 });
-  res.json(messages);
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
+
+const server = app.listen(
+  PORT,
+  console.log(`Server running on PORT ${PORT}...`)
+);
+
+const io = require("socket.io")(server, {
+  pingTimeout: 60000,
+  cors: {
+    origin: "http://localhost:3000",
+    // credentials: true,
+  },
 });
 
-const server = app.listen(4000);
+io.on("connection", (socket) => {
+  console.log("Connected to socket.io");
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+  });
 
-const wss = new ws.WebSocketServer({ server });
-wss.on("connection", (connection, req) => {
-  function notifyAboutOnlinePeople() {
-    [...wss.clients].forEach((client) => {
-      client.send(
-        JSON.stringify({
-          online: [...wss.clients].map((c) => ({
-            userId: c.userId,
-            username: c.username,
-          })),
-        })
-      );
+  socket.on("join chat", (room) => {
+    socket.join(room);
+    console.log("User Joined Room: " + room);
+  });
+  socket.on("typing", (room) => socket.in(room).emit("typing"));
+  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+
+  socket.on("new message", (newMessageRecieved) => {
+    var chat = newMessageRecieved.chat;
+
+    if (!chat.users) return console.log("chat.users not defined");
+
+    chat.users.forEach((user) => {
+      if (user._id == newMessageRecieved.sender._id) return;
+
+      socket.in(user._id).emit("message recieved", newMessageRecieved);
     });
-  }
-
-  connection.isAlive = true;
-
-  connection.timer = setInterval(() => {
-    connection.ping();
-    connection.deathTimer = setTimeout(() => {
-      connection.isAlive = false;
-      clearInterval(connection.timer);
-      connection.terminate();
-      notifyAboutOnlinePeople();
-    }, 1000);
-  }, 5000);
-
-  connection.on("pong", () => {
-    clearTimeout(connection.deathTimer);
   });
 
-  const cookies = req.headers.cookie;
-  if (cookies) {
-    const tokenCookieString = cookies
-      .split(";")
-      .find((str) => str.startsWith("token="));
-    if (tokenCookieString) {
-      const token = tokenCookieString.split("=")[1];
-      if (token) {
-        jwt.verify(token, secretKey, {}, (err, userData) => {
-          if (err) throw err;
-          const { userId, username } = userData;
-          connection.userId = userId;
-          connection.username = username;
-        });
-      }
-    }
-  }
-
-  connection.on("message", async (message) => {
-    const messageData = JSON.parse(message.toString());
-    const { recipient, text, file } = messageData;
-    let filename = null;
-    if (file) {
-      console.log("size", file.data.length);
-      const parts = file.name.split(".");
-      const ext = parts[parts.length - 1];
-      filename = Date.now() + "." + ext;
-      const path = __dirname + "\\uploads\\" + filename;
-      console.log(path);
-      const bufferData = Buffer.from(file.data.split(",")[1], "base64");
-      fs.writeFile(path, bufferData, () => {
-        console.log("file saved:" + path);
-      });
-    }
-    if (recipient && (text || file)) {
-      const messageDoc = await Message.create({
-        sender: connection.userId,
-        recipient,
-        text,
-        file: file ? filename : null,
-      });
-      console.log("created message");
-      [...wss.clients]
-        .filter((c) => c.userId === recipient)
-        .forEach((c) =>
-          c.send(
-            JSON.stringify({
-              text,
-              sender: connection.userId,
-              recipient,
-              file: file ? filename : null,
-              _id: messageDoc._id,
-            })
-          )
-        );
-    }
+  socket.off("setup", () => {
+    console.log("USER DISCONNECTED");
+    socket.leave(userData._id);
   });
-
-  // notify everyone about online people (when someone connects)
-  notifyAboutOnlinePeople();
 });
