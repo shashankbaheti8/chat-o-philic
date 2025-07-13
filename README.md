@@ -3,7 +3,7 @@
 A **full-stack real-time chat application** built with **React (Material UI)** and **Node.js + Express + MongoDB**. Supports **1-on-1 and group chats**, real-time messaging via **Socket.IO**, and user authentication.
 
 🔗 **Live Demo**:
-[https://your-chat-app-url.com](https://your-chat-app-url.com)
+[https://chat-o-philic.vercel.app](https://chat-o-philic.vercel.app)
 
 ---
 
@@ -16,10 +16,8 @@ A **full-stack real-time chat application** built with **React (Material UI)** a
   * [1. Clone Repository](#1-clone-repository)
   * [2. Backend Setup](#2-backend-setup)
   * [3. Frontend Setup](#3-frontend-setup)
-* [🔐 Authentication](#-authentication)
 * [📦 Folder Structure](#-folder-structure)
 * [⚙️ Deployment](#️-deployment)
-* [📚 Learnings](#-learnings)
 
 ---
 
@@ -98,14 +96,6 @@ REACT_APP_CLOUDINARY_URL=
 ```
 
 Open [http://localhost:5173](http://localhost:5173) to use the app locally.
-
----
-
-## 🔐 Authentication
-
-* Users can register with name, email, password, and profile picture.
-* Login returns JWT and stores it in localStorage.
-* Protected routes on both frontend and backend.
 
 ---
 
