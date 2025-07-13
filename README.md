@@ -1,7 +1,157 @@
-**Chat-o-Philic** is a dynamic web-based chat application designed to provide seamless and real-time communication. It features a user-friendly interface, secure authentication, and responsive design to enhance user interaction. Whether you're creating an account or logging in, Chat-o-Philic ensures a smooth and intuitive chat experience.
+# 💬 Chat-o-Philic - Real-time Chat Application
 
-##Features:
-**User Authentication**: Secure and simple login and registration functionality.
-**Real-Time Messaging**: Instant messaging with automatic updates.
-**Responsive Design**: Optimized for use on any device, including desktops, tablets, and smartphones.
-**File Sharing**: Share files easily within chat conversations.
+A **full-stack real-time chat application** built with **React (Material UI)** and **Node.js + Express + MongoDB**. Supports **1-on-1 and group chats**, real-time messaging via **Socket.IO**, and user authentication.
+
+🔗 **Live Demo**:
+[https://your-chat-app-url.com](https://your-chat-app-url.com)
+
+---
+
+## 🗂️ Table of Contents
+
+* [✨ Features](#-features)
+* [🛠 Tech Stack](#-tech-stack)
+* [🚀 Setup Instructions](#-setup-instructions)
+
+  * [1. Clone Repository](#1-clone-repository)
+  * [2. Backend Setup](#2-backend-setup)
+  * [3. Frontend Setup](#3-frontend-setup)
+* [🔐 Authentication](#-authentication)
+* [📦 Folder Structure](#-folder-structure)
+* [⚙️ Deployment](#️-deployment)
+* [📚 Learnings](#-learnings)
+
+---
+
+## ✨ Features
+
+* 🔐 JWT-based Authentication
+* 👥 1-on-1 and Group Chat Support
+* 📤 Image Upload with Cloudinary
+* 🔴 Real-time messaging with **Socket.IO**
+* 👤 Profile Viewing & Management
+* 📱 Responsive and Modern UI (Material UI)
+* ☁️ Persistent chat history via MongoDB
+
+---
+
+## 🛠 Tech Stack
+
+| Frontend       | Backend            | Real-Time | Styling      |
+| -------------- | ------------------ | --------- | ------------ |
+| React.js       | Node.js            | Socket.IO | Material UI  |
+| Axios          | Express.js         |           | Poppins Font |
+| React Router   | MongoDB + Mongoose |           |              |
+| React Toastify | JWT Authentication |           |              |
+
+---
+
+## 🚀 Setup Instructions
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/shashankbaheti8/chat-o-philic.git
+cd chat-o-philic
+```
+
+---
+
+### 2. Backend Setup
+
+```bash
+cd backend
+# Fill in your MONGO_URI, JWT_SECRET, FRONTED_URL, and PORT
+
+npm install
+npm run dev
+```
+
+#### `.env` Format:
+
+```env
+PORT=
+MONGO_URI=
+JWT_SECRET=
+FRONTED_URL=
+```
+
+---
+
+### 3. Frontend Setup
+
+```bash
+cd ../frontend
+# Set the API base URL for local dev
+
+npm install
+npm run dev
+```
+
+#### `.env` Format:
+
+```env
+REACT_APP_BACKEND_URL=
+REACT_APP_CLOUD_NAME=
+REACT_APP_PRESET_NAME=
+REACT_APP_CLOUDINARY_URL=
+```
+
+Open [http://localhost:5173](http://localhost:5173) to use the app locally.
+
+---
+
+## 🔐 Authentication
+
+* Users can register with name, email, password, and profile picture.
+* Login returns JWT and stores it in localStorage.
+* Protected routes on both frontend and backend.
+
+---
+
+## 📦 Folder Structure
+
+### 📁 Frontend (`/frontend`)
+
+```
+src/
+├── components/
+│   ├── Authentication/
+│   ├── Chatbox.jsx
+│   ├── MyChats.jsx
+│   └── ...
+├── Context/
+│   └── ChatProvider.jsx
+├── Pages/
+│   ├── HomePage.jsx
+│   └── ChatPage.jsx
+├── socket.js
+├── App.jsx
+└── main.jsx
+```
+
+### 📁 Backend (`/backend`)
+
+```
+backend/
+├── controllers/
+├── models/
+├── routes/
+├── middlewares/
+└── server.js
+```
+
+---
+
+## ⚙️ Deployment
+
+### ✅ Frontend
+
+Deployed on **Vercel**
+
+
+### ✅ Backend
+
+Deployed on **Vercel**
+
+---
