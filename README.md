@@ -142,6 +142,6 @@ Deployed on **Vercel**
 
 ### ✅ Backend
 
-Deployed on **Vercel**
+Deployed on **Render**
 
 ---
