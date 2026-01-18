@@ -4,16 +4,17 @@ import {
   Button,
   IconButton,
   InputAdornment,
-  Typography,
   Box,
   Stack,
-  Card,
   CircularProgress,
+  keyframes,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "../../axios";
+import { COLORS } from "../../constants";
+import { useThemeMode } from "../../Context/ThemeProvider";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -21,6 +22,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { mode } = useThemeMode();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,90 +54,151 @@ const Login = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
   return (
-    <Box
-      minHeight="72vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      sx={{ backgroundColor: "#F4F6F8" }}
-    >
-      <Card
+    <Stack spacing={3}>
+      <TextField
+        fullWidth
+        label="Email"
+        name="email"
+        type="email"
+        value={form.email}
+        onChange={handleChange}
+        onKeyPress={handleKeyPress}
+        error={!!errors.email}
+        helperText={errors.email}
+        autoComplete="email"
+        autoFocus
         sx={{
-          width: "100%",
-          maxWidth: 420,
-          p: 4,
-          borderRadius: 4,
-          boxShadow: 3,
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
+
+      <TextField
+        fullWidth
+        label="Password"
+        name="password"
+        type={showPassword ? "text" : "password"}
+        value={form.password}
+        onChange={handleChange}
+        onKeyPress={handleKeyPress}
+        error={!!errors.password}
+        helperText={errors.password}
+        autoComplete="current-password"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowPassword(!showPassword)}
+                edge="end"
+                sx={{
+                  transition: "transform 0.2s ease",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                  }
+                }}
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
+
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mt: 1 }}>
+        <Button
+          variant="text"
+          size="small"
+          sx={{ 
+            textTransform: "none", 
+            color: COLORS.accent,
+            fontWeight: 500,
+            transition: "all 0.2s ease",
+            "&:hover": {
+              color: COLORS.accentHover,
+              backgroundColor: "transparent",
+              transform: "translateX(2px)",
+            }
+          }}
+        >
+          Forgot password?
+        </Button>
+      </Box>
+
+      <Button
+        fullWidth
+        variant="contained"
+        size="large"
+        onClick={handleSubmit}
+        disabled={loading}
+        sx={{
+          mt: 2,
+          height: 52,
+          fontWeight: 600,
+          fontSize: "1rem",
+          background: mode === "dark" 
+            ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+            : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
+          boxShadow: mode === "dark"
+            ? "0 4px 14px 0 rgba(59, 130, 246, 0.4)"
+            : "0 4px 14px 0 rgba(15, 23, 42, 0.3)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&:hover": {
+            background: mode === "dark" 
+              ? `linear-gradient(135deg, ${COLORS.accentHover} 0%, ${COLORS.accent} 100%)`
+              : `linear-gradient(135deg, #1E293B 0%, #334155 100%)`,
+            boxShadow: mode === "dark"
+              ? "0 6px 20px 0 rgba(59, 130, 246, 0.5)"
+              : "0 6px 20px 0 rgba(15, 23, 42, 0.4)",
+            transform: "translateY(-2px)",
+          },
+          "&:active": {
+            transform: "translateY(0)",
+          },
+          "&:disabled": {
+            background: mode === "dark" ? COLORS.surfaceDark : "#E2E8F0",
+          }
         }}
       >
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          align="center"
-          gutterBottom
-          sx={{ color: "#2C3E50", fontFamily: "Poppins, Roboto, sans-serif" }}
-        >
-          Log In
-        </Typography>
-
-        <Stack spacing={2}>
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            fullWidth
-          />
-
-          <TextField
-            label="Password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword((prev) => !prev)}>
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {loading ? (
-            <Box textAlign="center">
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSubmit}
-              sx={{
-                backgroundColor: "#E67E22",
-                "&:hover": {
-                  backgroundColor: "#d35400",
-                },
-                borderRadius: 2,
-                fontWeight: "bold",
-                color: "#fff",
-              }}
-            >
-              Log In
-            </Button>
-          )}
-        </Stack>
-      </Card>
-    </Box>
+        {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+      </Button>
+    </Stack>
   );
 };
 

@@ -10,5 +10,9 @@ const messageSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for better query performance
+messageSchema.index({ chat: 1, createdAt: -1 }); // Compound index for fetching messages by chat
+messageSchema.index({ content: "text" }); // Text index for search functionality
+
 const Message = mongoose.model("Message", messageSchema);
 module.exports = Message;

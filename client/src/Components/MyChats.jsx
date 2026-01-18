@@ -3,14 +3,8 @@ import {
   Typography,
   Button,
   Stack,
-  useTheme,
-  useMediaQuery,
-  Paper,
   Avatar,
-  Tooltip,
-  CircularProgress,
-  Snackbar,
-  Alert,
+  keyframes,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useEffect, useState } from "react";
@@ -19,12 +13,25 @@ import { ChatState } from "../Context/ChatProvider";
 import GroupChatModal from "./Miscellaneous/GroupChatModal";
 import { getSender } from "../Config/ChatLogics";
 import ChatLoading from "./ChatLoading";
+import { COLORS } from "../constants";
+import { useThemeMode } from "../Context/ThemeProvider";
+
+// Fade in animation
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
-  const [snackbar, setSnackbar] = useState(null);
-
   const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
+  const { mode } = useThemeMode();
 
   const fetchChats = async () => {
     try {
@@ -37,10 +44,7 @@ const MyChats = ({ fetchAgain }) => {
       const { data } = await axios.get("/api/chat", config);
       setChats(data);
     } catch (error) {
-      setSnackbar({
-        message: "Failed to load the chats",
-        severity: "error",
-      });
+      console.error("Failed to load chats");
     }
   };
 
@@ -49,96 +53,181 @@ const MyChats = ({ fetchAgain }) => {
     fetchChats();
   }, [fetchAgain]);
 
-  const handleCloseSnackbar = () => setSnackbar(null);
-
   return (
-    <Paper
-      elevation={3}
+    <Box
       sx={{
         display: { xs: selectedChat ? "none" : "flex", md: "flex" },
         flexDirection: "column",
-        alignItems: "center",
-        padding: 2,
-        backgroundColor: "#fff",
-        width: { xs: "100%", md: "31%" },
-        borderRadius: 2,
+        width: { xs: "100%", md: 360 },
         height: "100%",
+        background: mode === "dark"
+          ? "rgba(255, 255, 255, 0.03)"
+          : "rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(10px)",
+        p: 3,
+        borderRadius: "12px",
+        border: `1px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"}`,
+        boxShadow: mode === "dark"
+          ? "0 8px 32px rgba(0, 0, 0, 0.3)"
+          : "0 8px 32px rgba(0, 0, 0, 0.1)",
+        animation: `${fadeIn} 0.4s ease-out`,
       }}
     >
+      {/* Header */}
       <Box
-        width="100%"
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        paddingBottom={2}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
         <Typography
           variant="h6"
           sx={{
-            fontFamily: "Poppins",
-            color: "#2C3E50",
+            fontWeight: 700,
+            background: mode === "dark"
+              ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+              : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
-          My Chats
+          Messages
         </Typography>
         <GroupChatModal>
           <Button
-            variant="contained"
             startIcon={<AddIcon />}
             sx={{
-              fontSize: { xs: "12px", md: "14px" },
-              backgroundColor: "#E67E22",
+              minWidth: "auto",
+              px: 2,
+              py: 1,
+              fontWeight: 600,
+              background: mode === "dark"
+                ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+                : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
+              color: "#fff",
+              fontSize: "0.875rem",
+              borderRadius: "8px",
+              boxShadow: mode === "dark"
+                ? "0 4px 12px rgba(59, 130, 246, 0.3)"
+                : "0 4px 12px rgba(15, 23, 42, 0.2)",
+              transition: "all 0.2s ease",
               "&:hover": {
-                backgroundColor: "#d35400",
+                transform: "translateY(-2px)",
+                boxShadow: mode === "dark"
+                  ? "0 6px 16px rgba(59, 130, 246, 0.4)"
+                  : "0 6px 16px rgba(15, 23, 42, 0.3)",
               },
-              borderRadius: "20px",
-              textTransform: "none",
-              fontFamily: "Poppins",
             }}
           >
-            New Group Chat
+            New
           </Button>
         </GroupChatModal>
       </Box>
+
+      {/* Chat List */}
       <Box
         sx={{
-          backgroundColor: "#F4F6F8",
-          width: "100%",
           flex: 1,
-          borderRadius: 2,
           overflowY: "auto",
-          padding: 1,
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: mode === "dark"
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.1)",
+            borderRadius: "3px",
+            "&:hover": {
+              background: COLORS.accent,
+            },
+          },
         }}
       >
         {chats ? (
-          <Stack spacing={1}>
+          <Stack spacing={1.5}>
             {chats.map((chat) => (
               <Box
                 key={chat._id}
                 onClick={() => setSelectedChat(chat)}
                 sx={{
                   cursor: "pointer",
-                  backgroundColor:
-                    selectedChat === chat ? "#2C3E50" : "#E8E8E8",
-                  color: selectedChat === chat ? "white" : "#333",
-                  padding: "8px 12px",
-                  borderRadius: 2,
-                  fontFamily: "Poppins",
+                  p: 2,
+                  borderRadius: "12px",
+                  background: selectedChat === chat 
+                    ? mode === "dark"
+                      ? `linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(96, 165, 250, 0.1) 100%)`
+                      : `linear-gradient(135deg, rgba(15, 23, 42, 0.1) 0%, rgba(30, 64, 175, 0.08) 100%)`
+                    : "transparent",
+                  border: `1px solid ${selectedChat === chat 
+                    ? COLORS.accent 
+                    : "transparent"}`,
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    background: mode === "dark"
+                      ? "rgba(59, 130, 246, 0.15)"
+                      : "rgba(15, 23, 42, 0.05)",
+                    transform: "translateX(4px)",
+                    boxShadow: mode === "dark"
+                      ? "0 4px 12px rgba(59, 130, 246, 0.2)"
+                      : "0 4px 12px rgba(0, 0, 0, 0.08)",
+                  },
                 }}
               >
-                <Typography variant="subtitle2">
-                  {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
-                    : chat.chatName}
-                </Typography>
-                {chat.latestMessage && (
-                  <Typography variant="caption">
-                    <b>{chat.latestMessage.sender.name}:</b>{" "}
-                    {chat.latestMessage.content.length > 50
-                      ? chat.latestMessage.content.substring(0, 51) + "..."
-                      : chat.latestMessage.content}
-                  </Typography>
-                )}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Avatar
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      border: selectedChat === chat 
+                        ? `2px solid ${COLORS.accent}`
+                        : `2px solid transparent`,
+                      transition: "border-color 0.2s ease",
+                    }}
+                    alt={!chat.isGroupChat ? getSender(loggedUser, chat.users) : chat.chatName}
+                    src={!chat.isGroupChat ? chat.users.find(u => u._id !== loggedUser._id)?.pic : null}
+                  />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 600,
+                        color: mode === "dark" 
+                          ? COLORS.textPrimaryDark 
+                          : COLORS.textPrimaryLight,
+                        mb: 0.5,
+                      }}
+                    >
+                      {!chat.isGroupChat
+                        ? getSender(loggedUser, chat.users)
+                        : chat.chatName}
+                    </Typography>
+                    {chat.latestMessage && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: mode === "dark"
+                            ? COLORS.textSecondaryDark
+                            : COLORS.textSecondaryLight,
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <strong>{chat.latestMessage.sender.name}:</strong>{" "}
+                        {chat.latestMessage.content.length > 50
+                          ? chat.latestMessage.content.substring(0, 51) + "..."
+                          : chat.latestMessage.content}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
               </Box>
             ))}
           </Stack>
@@ -146,23 +235,7 @@ const MyChats = ({ fetchAgain }) => {
           <ChatLoading />
         )}
       </Box>
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={5000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-      >
-        {snackbar && (
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity={snackbar.severity}
-            variant="filled"
-          >
-            {snackbar.message}
-          </Alert>
-        )}
-      </Snackbar>
-    </Paper>
+    </Box>
   );
 };
 

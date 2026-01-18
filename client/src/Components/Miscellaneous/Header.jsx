@@ -7,20 +7,20 @@ import {
   Menu,
   MenuItem,
   Drawer,
-  List,
-  Divider,
-  InputBase,
-  Button,
   Box,
   Avatar,
   CircularProgress,
-  Paper,
-  Tooltip,
+  TextField,
+  InputAdornment,
+  Stack,
+  Divider,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Notifications as NotificationsIcon,
-  ExpandMore as ExpandMoreIcon,
+  MoreVert as MoreVertIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -30,6 +30,7 @@ import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../../Context/ChatProvider";
 import ProfileModal from "./ProfileModal";
 import { getSender } from "../../Config/ChatLogics";
+import { COLORS } from "../../constants";
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -64,7 +65,7 @@ const Header = () => {
       const { data } = await axios.get(`/api/user?search=${search}`, config);
       setSearchResult(data);
     } catch (error) {
-      alert("Failed to load search results");
+      console.error("Search failed");
     } finally {
       setLoading(false);
     }
@@ -86,7 +87,7 @@ const Header = () => {
       setSelectedChat(data);
       setDrawerOpen(false);
     } catch (error) {
-      alert("Error fetching the chat");
+      console.error("Error creating chat");
     } finally {
       setLoadingChat(false);
     }
@@ -101,149 +102,244 @@ const Header = () => {
     <>
       <AppBar
         position="static"
+        elevation={0}
         sx={{
-          backgroundColor: "white",
-          borderBottom: "4px solid #2C3E50",
-          boxShadow: "none",
+          bgcolor: "transparent",
+          backdropFilter: "blur(10px)",
+          background: "rgba(255, 255, 255, 0.03)",
+          borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Tooltip title="Search Users to chat" placement="bottom-end">
-            <Button
-              variant="text"
-              startIcon={<SearchIcon />}
-              onClick={() => setDrawerOpen(true)}
-              sx={{
-                color: "#2C3E50",
-                textTransform: "none",
-                fontFamily: "Poppins",
-              }}
-            >
-              <Typography sx={{ display: { xs: "none", md: "inline" } }}>
-                Search User
-              </Typography>
-            </Button>
-          </Tooltip>
-
+        <Toolbar sx={{ minHeight: 64, px: 3 }}>
+          {/* Logo */}
           <Typography
-            variant="h5"
+            variant="h6"
             sx={{
-              fontFamily: "Poppins",
-              color: "#2C3E50",
-              fontWeight: 600,
+              fontWeight: 700,
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mr: "auto",
             }}
           >
             Chat-o-Philic
           </Typography>
 
-          <Box display="flex" alignItems="center" gap={2}>
-            <IconButton
-              onClick={(e) => setNotifAnchorEl(e.currentTarget)}
-              color="default"
+          {/* Search Icon */}
+          <IconButton
+            onClick={() => setDrawerOpen(true)}
+            sx={{
+              mr: 1,
+              color: COLORS.textSecondary,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: COLORS.accent,
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <SearchIcon />
+          </IconButton>
+
+          {/* Notifications */}
+          <IconButton
+            onClick={(e) => setNotifAnchorEl(e.currentTarget)}
+            sx={{
+              mr: 1,
+              color: COLORS.textSecondary,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: COLORS.accent,
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <Badge
+              badgeContent={notification.length}
+              sx={{
+                "& .MuiBadge-badge": {
+                  background: `linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.primary} 100%)`,
+                  boxShadow: `0 0 8px ${COLORS.secondary}`,
+                },
+              }}
             >
-              <Badge
-                badgeContent={notification.length}
-                color="error"
-                overlap="circular"
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+
+          {/* Profile Menu */}
+          <IconButton
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{
+              color: COLORS.textSecondary,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: COLORS.accent,
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                transform: "scale(1.05)",
+              },
+            }}
+          >
+            <Avatar
+              alt={user.name}
+              src={user.pic}
+              sx={{ 
+                width: 32, 
+                height: 32,
+                border: `2px solid transparent`,
+                transition: "border-color 0.2s ease",
+                "&:hover": {
+                  borderColor: COLORS.accent,
+                }
+              }}
+            />
+          </IconButton>
+
+          {/* Profile Menu Dropdown */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+            PaperProps={{
+              sx: {
+                bgcolor: "background.paper",
+                mt: 1,
+                minWidth: 200,
+              },
+            }}
+          >
+            <ProfileModal user={user}>
+              <MenuItem
+                sx={{
+                  color: COLORS.textPrimary,
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 229, 255, 0.1)",
+                  },
+                }}
               >
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <Menu
-              anchorEl={notifAnchorEl}
-              open={Boolean(notifAnchorEl)}
-              onClose={() => setNotifAnchorEl(null)}
+                <PersonIcon sx={{ mr: 1, fontSize: 20 }} />
+                My Profile
+              </MenuItem>
+            </ProfileModal>
+            <Divider sx={{ borderColor: COLORS.divider }} />
+            <MenuItem
+              onClick={logoutHandler}
+              sx={{
+                color: COLORS.secondary,
+                "&:hover": {
+                  backgroundColor: "rgba(255, 77, 141, 0.1)",
+                },
+              }}
             >
-              {!notification.length && <MenuItem>No New Messages</MenuItem>}
-              {notification.map((notif) => (
-                <MenuItem
-                  key={notif._id}
-                  onClick={() => {
-                    setSelectedChat(notif.chat);
-                    setNotification(notification.filter((n) => n !== notif));
-                    setNotifAnchorEl(null);
-                  }}
-                >
-                  {notif.chat.isGroupChat
-                    ? `New message in ${notif.chat.chatName}`
-                    : `New message from ${getSender(user, notif.chat.users)}`}
-                </MenuItem>
-              ))}
-            </Menu>
+              <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
+              Logout
+            </MenuItem>
+          </Menu>
 
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-              <Avatar
-                alt={user.name}
-                src={user.pic}
-                sx={{ width: 36, height: 36 }}
-              />
-              <ExpandMoreIcon />
-            </IconButton>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-            >
-              <ProfileModal user={user}>
-                <MenuItem>My Profile</MenuItem>
-              </ProfileModal>
-              <Divider />
-              <MenuItem onClick={logoutHandler}>Logout</MenuItem>
-            </Menu>
-          </Box>
+          {/* Notifications Menu */}
+          <Menu
+            anchorEl={notifAnchorEl}
+            open={Boolean(notifAnchorEl)}
+            onClose={() => setNotifAnchorEl(null)}
+            PaperProps={{
+              sx: {
+                bgcolor: "background.paper",
+                mt: 1,
+                minWidth: 300,
+                maxHeight: 400,
+              },
+            }}
+          >
+            {!notification.length && (
+              <MenuItem disabled sx={{ color: COLORS.textSecondary }}>
+                No new notifications
+              </MenuItem>
+            )}
+            {notification.map((notif) => (
+              <MenuItem
+                key={notif._id}
+                onClick={() => {
+                  setSelectedChat(notif.chat);
+                  setNotification(notification.filter((n) => n !== notif));
+                  setNotifAnchorEl(null);
+                }}
+                sx={{
+                  color: COLORS.textPrimary,
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 229, 255, 0.1)",
+                  },
+                }}
+              >
+                {notif.chat.isGroupChat
+                  ? `New message in ${notif.chat.chatName}`
+                  : `New message from ${getSender(user, notif.chat.users)}`}
+              </MenuItem>
+            ))}
+          </Menu>
         </Toolbar>
       </AppBar>
 
+      {/* Search Drawer */}
       <Drawer
         anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            width: 360,
+            background: COLORS.backgroundSecondary,
+            borderRight: `1px solid ${COLORS.borderSubtle}`,
+          },
+        }}
       >
-        <Box width={300} p={2}>
-          <Typography variant="h6" sx={{ fontFamily: "Poppins", mb: 2 }}>
-            Search Users
-          </Typography>
-          <Paper
-            component="form"
+        <Box sx={{ p: 3 }}>
+          <Typography
+            variant="h6"
             sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: 2,
-              p: "2px 4px",
-              border: "1px solid #ccc",
-            }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch();
+              fontWeight: 600,
+              color: COLORS.textPrimary,
+              mb: 3,
             }}
           >
-            <InputBase
-              sx={{ ml: 1, flex: 1 }}
-              placeholder="Search by name or email"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <IconButton type="submit" sx={{ p: "10px" }}>
-              <SearchIcon />
-            </IconButton>
-          </Paper>
+            Search Users
+          </Typography>
+
+          <TextField
+            fullWidth
+            placeholder="Search by name or email"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: COLORS.textSecondary }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 3 }}
+          />
 
           {loading ? (
             <ChatLoading />
           ) : (
-            <List>
-              {searchResult?.map((user) => (
+            <Stack spacing={1}>
+              {searchResult?.map((searchUser) => (
                 <UserListItem
-                  key={user._id}
-                  user={user}
-                  handleFunction={() => accessChat(user._id)}
+                  key={searchUser._id}
+                  user={searchUser}
+                  handleFunction={() => accessChat(searchUser._id)}
                 />
               ))}
-            </List>
+            </Stack>
           )}
           {loadingChat && (
-            <CircularProgress sx={{ display: "block", mx: "auto" }} />
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
           )}
         </Box>
       </Drawer>

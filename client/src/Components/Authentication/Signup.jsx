@@ -4,15 +4,17 @@ import {
   Button,
   IconButton,
   InputAdornment,
-  Typography,
   Box,
   Stack,
   Avatar,
   CircularProgress,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff, CloudUpload } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import axios from "../../axios";
+import { COLORS } from "../../constants";
+import { useThemeMode } from "../../Context/ThemeProvider";
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -26,7 +28,9 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [pic, setPic] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadingPic, setUploadingPic] = useState(false);
   const navigate = useNavigate();
+  const { mode } = useThemeMode();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,18 +55,18 @@ const Signup = () => {
   };
 
   const postDetails = (file) => {
-    setLoading(true);
+    setUploadingPic(true);
     if (!file) {
-      alert("Please select an image");
-      setLoading(false);
+      toast.error("Please select an image");
+      setUploadingPic(false);
       return;
     }
 
     if (file.type === "image/jpeg" || file.type === "image/png") {
       const data = new FormData();
       data.append("file", file);
-      data.append("upload_preset", process.env.REACT_APP_PRESET_NAME); // your preset name here
-      data.append("cloud_name", process.env.REACT_APP_CLOUD_NAME); // your cloud name here
+      data.append("upload_preset", process.env.REACT_APP_PRESET_NAME);
+      data.append("cloud_name", process.env.REACT_APP_CLOUD_NAME);
 
       fetch(process.env.REACT_APP_CLOUDINARY_URL, {
         method: "POST",
@@ -71,12 +75,16 @@ const Signup = () => {
         .then((res) => res.json())
         .then((data) => {
           setPic(data.url.toString());
-          setLoading(false);
+          setUploadingPic(false);
+          toast.success("Image uploaded");
         })
-        .catch(() => setLoading(false));
+        .catch(() => {
+          setUploadingPic(false);
+          toast.error("Upload failed");
+        });
     } else {
-      alert("Please select a JPEG or PNG image!");
-      setLoading(false);
+      toast.error("Please select a JPEG or PNG");
+      setUploadingPic(false);
     }
   };
 
@@ -97,39 +105,57 @@ const Signup = () => {
         config
       );
       localStorage.setItem("userInfo", JSON.stringify(data));
-      setLoading(false);
+      toast.success("Account created successfully");
       navigate("/chats");
     } catch (error) {
-      alert(error.response?.data?.message || "Something went wrong");
+      toast.error(error.response?.data?.message || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      maxWidth="400px"
-      mx="auto"
-      mt={5}
-      p={3}
-      borderRadius={3}
-      boxShadow={3}
-      bgcolor="#fff"
-    >
-      <Typography variant="h5" fontWeight="bold" gutterBottom align="center">
-        Create Your Account
-      </Typography>
-
-      <Stack spacing={2}>
-        <Box display="flex" justifyContent="center">
+    <Stack spacing={3}>
+      <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+        <Box
+          sx={{
+            position: "relative",
+            "&:hover .upload-overlay": {
+              opacity: 1,
+            }
+          }}
+        >
           <Avatar
             src={pic}
             alt="Profile"
-            sx={{ width: 62, height: 62, mb: 1 }}
+            sx={{ 
+              width: 90, 
+              height: 90,
+              bgcolor: mode === "dark" ? COLORS.surfaceDark : COLORS.surfaceLight,
+              boxShadow: `0 4px 12px rgba(59, 130, 246, 0.2)`,
+            }}
           />
         </Box>
-
-        <Button variant="outlined" component="label">
-          Upload Profile Picture
+        <Button
+          variant="outlined"
+          component="label"
+          size="small"
+          startIcon={uploadingPic ? <CircularProgress size={16} /> : <CloudUpload />}
+          disabled={uploadingPic}
+          sx={{
+            borderColor: COLORS.accent,
+            color: COLORS.accent,
+            fontWeight: 500,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              borderColor: COLORS.accentHover,
+              bgcolor: mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.05)",
+              transform: "translateY(-2px)",
+              boxShadow: `0 4px 12px rgba(59, 130, 246, 0.2)`,
+            },
+          }}
+        >
+          {uploadingPic ? "Uploading..." : "Upload Picture"}
           <input
             type="file"
             hidden
@@ -137,72 +163,180 @@ const Signup = () => {
             onChange={(e) => postDetails(e.target.files[0])}
           />
         </Button>
+      </Box>
 
-        <TextField
-          label="Name"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          error={!!errors.name}
-          helperText={errors.name}
-          fullWidth
-        />
-        <TextField
-          label="Email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          error={!!errors.email}
-          helperText={errors.email}
-          fullWidth
-        />
-        <TextField
-          label="Password"
-          name="password"
-          type={showPassword ? "text" : "password"}
-          value={form.password}
-          onChange={handleChange}
-          error={!!errors.password}
-          helperText={errors.password}
-          fullWidth
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword((prev) => !prev)}>
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-        <TextField
-          label="Confirm Password"
-          name="confirmpassword"
-          type={showPassword ? "text" : "password"}
-          value={form.confirmpassword}
-          onChange={handleChange}
-          error={!!errors.confirmpassword}
-          helperText={errors.confirmpassword}
-          fullWidth
-        />
+      <TextField
+        fullWidth
+        label="Name"
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+        error={!!errors.name}
+        helperText={errors.name}
+        autoComplete="name"
+        autoFocus
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
 
-        {loading ? (
-          <Box textAlign="center">
-            <CircularProgress size={24} />
-          </Box>
-        ) : (
-          <Button
-            variant="contained"
-            fullWidth
-            sx={{ bgcolor: "#E67E22", ":hover": { bgcolor: "#d35400" } }}
-            onClick={handleSubmit}
-          >
-            Sign Up
-          </Button>
-        )}
-      </Stack>
-    </Box>
+      <TextField
+        fullWidth
+        label="Email"
+        name="email"
+        type="email"
+        value={form.email}
+        onChange={handleChange}
+        error={!!errors.email}
+        helperText={errors.email}
+        autoComplete="email"
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
+
+      <TextField
+        fullWidth
+        label="Password"
+        name="password"
+        type={showPassword ? "text" : "password"}
+        value={form.password}
+        onChange={handleChange}
+        error={!!errors.password}
+        helperText={errors.password}
+        autoComplete="new-password"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton 
+                onClick={() => setShowPassword(!showPassword)} 
+                edge="end"
+                sx={{
+                  transition: "transform 0.2s ease",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                  }
+                }}
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
+
+      <TextField
+        fullWidth
+        label="Confirm Password"
+        name="confirmpassword"
+        type={showPassword ? "text" : "password"}
+        value={form.confirmpassword}
+        onChange={handleChange}
+        error={!!errors.confirmpassword}
+        helperText={errors.confirmpassword}
+        autoComplete="new-password"
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#FFFFFF",
+            backdropFilter: "blur(10px)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: COLORS.accent,
+              }
+            },
+            "&.Mui-focused": {
+              bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+              boxShadow: `0 0 0 3px ${mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.1)"}`,
+            }
+          },
+        }}
+      />
+
+      <Button
+        fullWidth
+        variant="contained"
+        size="large"
+        onClick={handleSubmit}
+        disabled={loading}
+        sx={{
+          mt: 2,
+          height: 52,
+          fontWeight: 600,
+          fontSize: "1rem",
+          background: mode === "dark" 
+            ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+            : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
+          boxShadow: mode === "dark"
+            ? "0 4px 14px 0 rgba(59, 130, 246, 0.4)"
+            : "0 4px 14px 0 rgba(15, 23, 42, 0.3)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&:hover": {
+            background: mode === "dark" 
+              ? `linear-gradient(135deg, ${COLORS.accentHover} 0%, ${COLORS.accent} 100%)`
+              : `linear-gradient(135deg, #1E293B 0%, #334155 100%)`,
+            boxShadow: mode === "dark"
+              ? "0 6px 20px 0 rgba(59, 130, 246, 0.5)"
+              : "0 6px 20px 0 rgba(15, 23, 42, 0.4)",
+            transform: "translateY(-2px)",
+          },
+          "&:active": {
+            transform: "translateY(0)",
+          },
+          "&:disabled": {
+            background: mode === "dark" ? COLORS.surfaceDark : "#E2E8F0",
+          }
+        }}
+      >
+        {loading ? <CircularProgress size={24} color="inherit" /> : "Create Account"}
+      </Button>
+    </Stack>
   );
 };
 

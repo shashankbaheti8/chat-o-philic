@@ -56,7 +56,10 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const authUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+
+  // Sanitize email
+  email = email.toLowerCase().trim();
 
   const user = await User.findOne({ email });
 
