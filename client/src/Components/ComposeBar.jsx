@@ -5,11 +5,9 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
-import { toast } from "react-toastify";
 import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
-  AttachFile as AttachIcon,
 } from "@mui/icons-material";
 import { COLORS } from "../constants";
 import { useThemeMode } from "../Context/ThemeProvider";

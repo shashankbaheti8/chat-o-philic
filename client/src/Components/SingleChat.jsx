@@ -23,8 +23,6 @@ import { useThemeMode } from "../Context/ThemeProvider";
 import { COLORS } from "../constants";
 import ComposeBar from "./ComposeBar";
 import ScrollableChat from "./ScrollableChat";
-import { toast } from "react-toastify";
-import { Tooltip } from "@mui/material";
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const {

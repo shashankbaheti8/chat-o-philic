@@ -1,7 +1,6 @@
 import {
   Stack,
   Avatar,
-  Badge,
   Typography,
   Box,
 } from "@mui/material";
