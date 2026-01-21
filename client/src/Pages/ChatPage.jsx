@@ -16,7 +16,7 @@ import {
   Divider,
   Button
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search as SearchIcon,
   Notifications as NotificationsIcon,
