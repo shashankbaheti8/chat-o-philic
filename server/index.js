@@ -23,8 +23,18 @@ const limiter = rateLimit({
 // Apply the rate limiting middleware to all requests
 app.use(limiter);
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://chat-o-philic.vercel.app"
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: allowedOrigins,
+  credentials: true,
 }));
 
 app.use("/api/user", userRoutes);
@@ -59,8 +69,8 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    // credentials: true,
+    origin: allowedOrigins,
+    credentials: true,
   },
 });
 
