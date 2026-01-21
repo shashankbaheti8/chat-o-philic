@@ -12,7 +12,6 @@ A **full-stack real-time chat application** built with **React (Material UI)** a
 * [✨ Features](#-features)
 * [🛠 Tech Stack](#-tech-stack)
 * [🚀 Setup Instructions](#-setup-instructions)
-
   * [1. Clone Repository](#1-clone-repository)
   * [2. Backend Setup](#2-backend-setup)
   * [3. Frontend Setup](#3-frontend-setup)
@@ -25,7 +24,6 @@ A **full-stack real-time chat application** built with **React (Material UI)** a
 
 * 🔐 JWT-based Authentication
 * 👥 1-on-1 and Group Chat Support
-* 📤 Image Upload with Cloudinary
 * 🔴 Real-time messaging with **Socket.IO**
 * 👤 Profile Viewing & Management
 * 📱 Responsive and Modern UI (Material UI)

@@ -86,8 +86,9 @@ const ChatPage = () => {
   }, [navigate]);
 
   // Fetch Chats
-  const fetchChats = async () => {
+  const fetchChats = useCallback(async () => {
     if (!user) return;
+
     try {
       const config = {
         headers: {
@@ -99,11 +100,11 @@ const ChatPage = () => {
     } catch (error) {
       toast.error("Failed to load chats");
     }
-  };
+  }, [user, setChats]);
 
   useEffect(() => {
     fetchChats();
-  }, [fetchAgain, user]);
+  }, [fetchChats, fetchAgain]);
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
