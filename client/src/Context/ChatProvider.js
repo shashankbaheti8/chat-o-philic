@@ -15,7 +15,7 @@ const ChatProvider = ({ children }) => {
     const storedUser = JSON.parse(localStorage.getItem("userInfo"));
     setUser(storedUser);
     if (!storedUser) navigate("/");
-  }, [localStorage.getItem("userInfo")]);
+  }, [navigate]);
 
   return (
     <ChatContext.Provider

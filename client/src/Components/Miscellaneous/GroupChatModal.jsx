@@ -3,12 +3,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText,
   IconButton,
   Button,
   TextField,
-  Typography,
-  Chip,
   Box,
   CircularProgress,
 } from "@mui/material";
@@ -18,8 +15,12 @@ import axios from "../../axios";
 import { ChatState } from "../../Context/ChatProvider";
 import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
+import { COLORS } from "../../constants";
+import { useThemeMode } from "../../Context/ThemeProvider";
+import { toast } from "react-toastify";
 
 const GroupChatModal = ({ children }) => {
+  const { mode } = useThemeMode();
   const [open, setOpen] = useState(false);
   const [groupChatName, setGroupChatName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -34,7 +35,7 @@ const GroupChatModal = ({ children }) => {
 
   const handleGroup = (userToAdd) => {
     if (selectedUsers.find((u) => u._id === userToAdd._id)) {
-      alert("User already added"); // Replace with Snackbar/Toast if needed
+      toast.warning("User already added");
       return;
     }
     setSelectedUsers([...selectedUsers, userToAdd]);
@@ -53,7 +54,7 @@ const GroupChatModal = ({ children }) => {
       setSearchResult(data);
       setLoading(false);
     } catch (error) {
-      alert("Failed to load search results");
+      toast.error("Failed to load search results");
     }
   };
 
@@ -63,7 +64,7 @@ const GroupChatModal = ({ children }) => {
 
   const handleSubmit = async () => {
     if (!groupChatName || selectedUsers.length === 0) {
-      alert("Please fill all the fields");
+      toast.warning("Please fill all the fields");
       return;
     }
 
@@ -81,9 +82,9 @@ const GroupChatModal = ({ children }) => {
       );
       setChats([data, ...chats]);
       handleClose();
-      alert("New group chat created!");
+      toast.success("New group chat created!");
     } catch (error) {
-      alert(error.response.data || "Error creating chat");
+      toast.error("Error creating chat");
     }
   };
 
@@ -93,14 +94,40 @@ const GroupChatModal = ({ children }) => {
         {children}
       </span>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <Dialog 
+        open={open} 
+        onClose={handleClose} 
+        fullWidth 
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            background: mode === "dark" ? COLORS.surfaceDark : "#FFFFFF",
+            backgroundImage: "none",
+            border: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
+            boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
+          }
+        }}
+      >
         <DialogTitle
-          sx={{ fontSize: 28, textAlign: "center", fontFamily: "Poppins" }}
+          sx={{ 
+            fontSize: "1.25rem", 
+            fontWeight: 700,
+            textAlign: "center",
+            borderBottom: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+            p: 3,
+            color: mode === "dark" ? COLORS.textPrimaryDark : COLORS.textPrimaryLight,
+          }}
         >
           Create Group Chat
           <IconButton
             onClick={handleClose}
-            sx={{ position: "absolute", right: 12, top: 12 }}
+            sx={{ 
+              position: "absolute", 
+              right: 12, 
+              top: 12,
+              color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight,
+            }}
           >
             <CloseIcon />
           </IconButton>
@@ -155,16 +182,24 @@ const GroupChatModal = ({ children }) => {
           <Button
             variant="contained"
             onClick={handleSubmit}
+            size="large"
             sx={{
-              backgroundColor: "#E67E22",
+              background: mode === "dark" 
+                ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+                : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
               color: "#fff",
               "&:hover": {
-                backgroundColor: "#d35400",
+                background: mode === "dark" 
+                  ? `linear-gradient(135deg, ${COLORS.accentHover} 0%, ${COLORS.accent} 100%)`
+                  : `linear-gradient(135deg, #1E293B 0%, #334155 100%)`,
+                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
               },
-              borderRadius: 2,
-              px: 3,
-              fontWeight: 500,
+              borderRadius: "8px",
+              px: 4,
+              py: 1,
+              fontWeight: 600,
               textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             }}
           >
             Create Chat

@@ -1,5 +1,4 @@
 import {
-  Paper,
   Stack,
   Avatar,
   Badge,
@@ -43,69 +42,52 @@ const ChatCard = ({ chat, selected, onClick, loggedUser }) => {
   };
 
   return (
-    <Paper
-      elevation={selected ? 8 : 2}
+    <Box
       onClick={onClick}
       sx={{
-        p: 2,
+        p: 2.5,
         borderRadius: "16px",
         cursor: "pointer",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         border: selected 
-          ? `2px solid ${COLORS.accent}` 
-          : `1px solid ${mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+          ? `1px solid ${COLORS.accent}` 
+          : `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
         background: selected
           ? mode === "dark"
-            ? `linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)`
-            : `linear-gradient(135deg, rgba(15, 23, 42, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)`
+            ? `linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.05) 100%)`
+            : `linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%)`
           : mode === "dark"
             ? "rgba(255, 255, 255, 0.03)"
             : "#FFFFFF",
-        transform: selected ? "scale(1.02)" : "scale(1)",
+        backdropFilter: "blur(10px)",
+        transform: selected ? "translateX(4px)" : "none",
         boxShadow: selected
-          ? `0 8px 24px ${mode === "dark" ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}`
-          : mode === "dark"
-            ? "0 2px 8px rgba(0, 0, 0, 0.3)"
-            : "0 2px 8px rgba(0, 0, 0, 0.08)",
+          ? `0 4px 20px ${mode === "dark" ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)"}`
+          : "none",
         "&:hover": {
-          elevation: 6,
-          transform: selected ? "scale(1.02)" : "translateY(-4px)",
-          boxShadow: mode === "dark"
-            ? "0 8px 16px rgba(0, 0, 0, 0.4)"
-            : "0 8px 16px rgba(0, 0, 0, 0.12)",
+          background: selected 
+            ? undefined 
+            : mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
+          transform: "translateX(4px)",
+          boxShadow: `0 8px 24px ${mode === "dark" ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)"}`,
+          borderColor: selected ? COLORS.accent : mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)",
         },
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
         {/* Avatar with online status */}
-        <Badge
-          overlap="circular"
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          badgeContent={
-            <Box
-              sx={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                bgcolor: "#10B981", // Online green
-                border: `2px solid ${mode === "dark" ? "#141414" : "#FFFFFF"}`,
-              }}
-            />
-          }
+        <Avatar
+          src={getChatAvatar()}
+          alt={getChatName()}
+          sx={{ 
+            width: 56, 
+            height: 56,
+            border: `2px solid ${selected ? COLORS.accent : "transparent"}`,
+            transition: "border-color 0.3s ease",
+          }}
         >
-          <Avatar
-            src={getChatAvatar()}
-            alt={getChatName()}
-            sx={{ 
-              width: 56, 
-              height: 56,
-              border: `2px solid ${selected ? COLORS.accent : "transparent"}`,
-              transition: "border-color 0.3s ease",
-            }}
-          >
-            {getChatName()[0]}
-          </Avatar>
-        </Badge>
+          {getChatName()[0]}
+        </Avatar>
 
         {/* Chat info */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -155,7 +137,7 @@ const ChatCard = ({ chat, selected, onClick, loggedUser }) => {
         {/* Unread badge (placeholder for future) */}
         {/* <Badge badgeContent={3} color="error" /> */}
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 

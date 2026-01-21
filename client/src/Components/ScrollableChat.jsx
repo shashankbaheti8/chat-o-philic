@@ -1,10 +1,8 @@
 import { Avatar, Tooltip, Box, Typography, keyframes } from "@mui/material";
-import ScrollableFeed from "react-scrollable-feed";
+import { useRef, useEffect } from "react";
 import {
   isLastMessage,
   isSameSender,
-  isSameSenderMargin,
-  isSameUser,
 } from "../Config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import { getMessageTimestamp } from "../utils/dateUtils";
@@ -26,13 +24,29 @@ const fadeInUp = keyframes`
 const ScrollableChat = ({ messages }) => {
   const { user, selectedChat } = ChatState();
   const { mode } = useThemeMode();
+  const messagesEndRef = useRef(null);
 
   const isGroupChat = selectedChat?.isGroupChat;
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Handle paginated response structure if passed directly
+  const messagesList = Array.isArray(messages) 
+    ? messages 
+    : (messages?.messages && Array.isArray(messages.messages)) 
+      ? messages.messages 
+      : [];
+
   return (
-    <ScrollableFeed>
-      {messages &&
-        messages.map((m, i) => {
+    <Box sx={{ overflowY: "auto", height: "100%", p: 1 }}>
+      {messagesList &&
+        messagesList.map((m, i) => {
           const isOwnMessage = m.sender._id === user._id;
           const showAvatar = !isOwnMessage && isGroupChat && 
             (isSameSender(messages, m, i, user._id) || isLastMessage(messages, i, user._id));
@@ -162,7 +176,8 @@ const ScrollableChat = ({ messages }) => {
             </Box>
           );
         })}
-    </ScrollableFeed>
+      <div ref={messagesEndRef} />
+    </Box>
   );
 };
 

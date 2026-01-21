@@ -3,7 +3,9 @@ import {
   InputBase,
   IconButton,
   Paper,
+  Tooltip,
 } from "@mui/material";
+import { toast } from "react-toastify";
 import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
@@ -18,7 +20,8 @@ const ComposeBar = ({
   onSend, 
   onKeyDown,
   onEmojiClick,
-  disabled 
+  disabled,
+  emojiTriggerRef
 }) => {
   const { mode } = useThemeMode();
 
@@ -52,35 +55,24 @@ const ComposeBar = ({
         }}
       >
         {/* Emoji Button */}
-        <IconButton
-          size="small"
-          onClick={onEmojiClick}
-          sx={{
-            color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight,
-            transition: "all 0.2s ease",
-            "&:hover": {
-              color: COLORS.accent,
-              transform: "scale(1.1)",
-            },
-          }}
-        >
-          <EmojiIcon />
-        </IconButton>
+        <Tooltip title="Emoji">
+          <IconButton
+            ref={emojiTriggerRef}
+            size="small"
+            onClick={onEmojiClick}
+            sx={{
+              color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: COLORS.accent,
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <EmojiIcon />
+          </IconButton>
+        </Tooltip>
 
-        {/* Attach Button */}
-        <IconButton
-          size="small"
-          sx={{
-            color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight,
-            transition: "all 0.2s ease",
-            "&:hover": {
-              color: COLORS.accent,
-              transform: "scale(1.1)",
-            },
-          }}
-        >
-          <AttachIcon />
-        </IconButton>
 
         {/* Input */}
         <InputBase
@@ -102,39 +94,44 @@ const ComposeBar = ({
         />
 
         {/* Send Button */}
-        <IconButton
-          onClick={onSend}
-          disabled={!message.trim() || disabled}
-          sx={{
-            background: !message.trim()
-              ? "transparent"
-              : mode === "dark"
-                ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
-                : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
-            color: "#fff",
-            width: 44,
-            height: 44,
-            mr: 0.5,
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            "&:hover": {
-              transform: !message.trim() ? "none" : "scale(1.1) rotate(15deg)",
-              boxShadow: !message.trim()
-                ? "none"
-                : mode === "dark"
-                  ? `0 6px 16px rgba(59, 130, 246, 0.4)`
-                  : `0 6px 16px rgba(15, 23, 42, 0.3)`,
-            },
-            "&:active": {
-              transform: !message.trim() ? "none" : "scale(0.95)",
-            },
-            "&:disabled": {
-              background: "transparent",
-              color: mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
-            },
-          }}
-        >
-          <SendIcon />
-        </IconButton>
+        <Tooltip title="Send Message">
+          <span>
+            <IconButton
+              onClick={onSend}
+              disabled={!message.trim() || disabled}
+              sx={{
+                background: !message.trim()
+                  ? "transparent"
+                  : mode === "dark"
+                    ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+                    : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`,
+                color: "#fff",
+                width: 36,
+                height: 36,
+                mr: 0.5,
+                borderRadius: "50%",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": {
+                  transform: !message.trim() ? "none" : "scale(1.1)",
+                  boxShadow: !message.trim()
+                    ? "none"
+                    : mode === "dark"
+                      ? `0 6px 16px rgba(59, 130, 246, 0.4)`
+                      : `0 6px 16px rgba(15, 23, 42, 0.3)`,
+                },
+                "&:active": {
+                  transform: !message.trim() ? "none" : "scale(0.95)",
+                },
+                "&:disabled": {
+                  background: "transparent",
+                  color: mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
+                },
+              }}
+            >
+              <SendIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Paper>
     </Box>
   );

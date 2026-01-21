@@ -9,13 +9,9 @@ import {
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
-  Call as CallIcon,
-  Videocam as VideocamIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
-import Lottie from "react-lottie";
-import animationData from "../Animations/typing.json";
 import { ChatState } from "../Context/ChatProvider";
 import { getSender, getSenderFull } from "../Config/ChatLogics";
 import ProfileModal from "./Miscellaneous/ProfileModal";
@@ -26,8 +22,9 @@ import EmojiPicker from "emoji-picker-react";
 import { useThemeMode } from "../Context/ThemeProvider";
 import { COLORS } from "../constants";
 import ComposeBar from "./ComposeBar";
-import DateSeparator from "./DateSeparator";
-import ScrollableFeed from "react-scrollable-feed";
+import ScrollableChat from "./ScrollableChat";
+import { toast } from "react-toastify";
+import { Tooltip } from "@mui/material";
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const {
@@ -51,15 +48,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const selectedChatRef = useRef();
   const emojiPickerRef = useRef();
-
-  const defaultOptions = {
-    loop: true,
-    autoplay: true,
-    animationData: animationData,
-    rendererSettings: {
-      preserveAspectRatio: "xMidYMid slice",
-    },
-  };
+  const emojiTriggerRef = useRef();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -128,6 +117,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   useEffect(() => {
     selectedChatRef.current = selectedChat;
     fetchMessages();
+    // eslint-disable-next-line
   }, [selectedChat]);
 
   useEffect(() => {
@@ -150,7 +140,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+      // Check if click is outside picker AND outside the trigger button
+      if (
+        emojiPickerRef.current && 
+        !emojiPickerRef.current.contains(event.target) &&
+        (!emojiTriggerRef.current || !emojiTriggerRef.current.contains(event.target))
+      ) {
         setShowEmojiPicker(false);
       }
     };
@@ -185,21 +180,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       }
     }, timerLength);
   };
-
-  // Group messages by date
-  const groupMessagesByDate = (messages) => {
-    const groups = {};
-    messages.forEach(msg => {
-      const date = new Date(msg.createdAt).toDateString();
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(msg);
-    });
-    return groups;
-  };
-
-  const messageGroups = groupMessagesByDate(messages);
 
   return (
     <Box
@@ -253,34 +233,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   ? getSender(user, selectedChat.users)
                   : selectedChat.chatName}
               </Typography>
-              <Typography variant="caption" sx={{ color: COLORS.textSecondaryLight, fontSize: "0.8rem" }}>
-                {isTyping ? "typing..." : "Active now"}
+              <Typography variant="caption" sx={{ color: COLORS.textSecondaryLight, fontSize: "0.8rem", height: "1.2em", display: "block" }}>
+                {isTyping ? "typing..." : ""}
               </Typography>
             </Box>
 
             <Stack direction="row" spacing={0.5}>
-              <IconButton
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    background: "rgba(59, 130, 246, 0.1)",
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <CallIcon />
-              </IconButton>
-              <IconButton
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    background: "rgba(59, 130, 246, 0.1)",
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <VideocamIcon />
-              </IconButton>
               {!selectedChat.isGroupChat ? (
                 <ProfileModal user={getSenderFull(user, selectedChat.users)}>
                   <IconButton
@@ -329,71 +287,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <CircularProgress />
               </Box>
             ) : (
-              <ScrollableFeed>
-                {Object.keys(messageGroups).map((date) => (
-                  <Box key={date}>
-                    <DateSeparator date={date} />
-                    {messageGroups[date].map((m, i) => {
-                      const isOwnMessage = m.sender._id === user._id;
-                      const showAvatar = !isOwnMessage && selectedChat.isGroupChat;
-
-                      return (
-                        <Box
-                          key={m._id}
-                          display="flex"
-                          justifyContent={isOwnMessage ? "flex-end" : "flex-start"}
-                          mb={2}
-                        >
-                          {showAvatar && (
-                            <Avatar
-                              src={m.sender.pic}
-                              alt={m.sender.name}
-                              sx={{ width: 32, height: 32, mr: 1.5 }}
-                            />
-                          )}
-
-                          <Box sx={{ maxWidth: "70%" }}>
-                            {!isOwnMessage && selectedChat.isGroupChat && (
-                              <Typography variant="caption" sx={{ color: COLORS.accent, fontWeight: 600, fontSize: "0.75rem", mb: 0.5, display: "block" }}>
-                                {m.sender.name}
-                              </Typography>
-                            )}
-
-                            <Box
-                              sx={{
-                                background: isOwnMessage
-                                  ? mode === "dark"
-                                    ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
-                                    : `linear-gradient(135deg, ${COLORS.primary} 0%, #1E40AF 100%)`
-                                  : mode === "dark"
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "#FFFFFF",
-                                color: isOwnMessage ? "#FFFFFF" : mode === "dark" ? COLORS.textPrimaryDark : COLORS.textPrimaryLight,
-                                borderRadius: isOwnMessage ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                                p: "12px 16px",
-                                boxShadow: mode === "dark"
-                                  ? "0 2px 8px rgba(0, 0,0, 0.3)"
-                                  : "0 2px 8px rgba(0, 0, 0, 0.1)",
-                                marginLeft: !isOwnMessage && !showAvatar ? "40px" : 0,
-                              }}
-                            >
-                              <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
-                                {m.content}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                ))}
-
-                {isTyping && (
-                  <Box sx={{ maxWidth: 60 }}>
-                    <Lottie options={defaultOptions} height={30} width={50} />
-                  </Box>
-                )}
-              </ScrollableFeed>
+              <ScrollableChat messages={messages} />
             )}
           </Box>
 
@@ -429,7 +323,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             onChange={typingHandler}
             onSend={handleSendClick}
             onKeyDown={sendMessage}
-            onEmojiClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onEmojiClick={() => setShowEmojiPicker((prev) => !prev)}
+            emojiTriggerRef={emojiTriggerRef}
           />
         </>
       ) : (
@@ -443,7 +338,19 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight,
           }}
         >
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 800, 
+              mb: 2,
+              background: mode === "dark" 
+                ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+                : `linear-gradient(135deg, ${COLORS.primary} 0%, #3B82F6 100%)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             Welcome to Chat-o-Philic
           </Typography>
           <Typography variant="body2">

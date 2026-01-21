@@ -1,4 +1,4 @@
-import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 
 /**
  * Get relative time string (e.g., "2m ago", "5h ago")

@@ -7,13 +7,25 @@ const messageRoutes = require("./routes/message.Routes");
 const { notFound, errorHandler } = require("./middlewares/error.Middleware");
 const path = require("path");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 connectDB();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+});
+
+// Apply the rate limiting middleware to all requests
+app.use(limiter);
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+}));
 
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
@@ -47,7 +59,7 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     // credentials: true,
   },
 });

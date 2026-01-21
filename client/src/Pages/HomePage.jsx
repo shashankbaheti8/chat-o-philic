@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import {
   Box,
-  Container,
   Typography,
   Tabs,
   Tab,
@@ -17,14 +16,9 @@ import {
 import Login from "../Components/Authentication/Login";
 import Signup from "../Components/Authentication/Signup";
 import { useThemeMode } from "../Context/ThemeProvider";
-import { COLORS, UI } from "../constants";
+import { COLORS } from "../constants";
 
-// Animated gradient keyframes
-const gradientAnimation = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
+
 
 // Fade in animation
 const fadeIn = keyframes`
