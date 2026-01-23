@@ -25,7 +25,6 @@ app.use(limiter);
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://chat-o-philic.vercel.app"
 ];
 
 if (process.env.FRONTEND_URL) {
