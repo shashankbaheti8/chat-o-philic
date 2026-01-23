@@ -306,7 +306,7 @@ const ChatPage = () => {
               },
             }}
           >
-            {chats ? (
+            {chats && Array.isArray(chats) ? (
               <Stack spacing={2}>
                 {chats.map((chat) => (
                   <ChatCard
