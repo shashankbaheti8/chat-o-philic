@@ -71,7 +71,7 @@ const MyChats = ({ fetchAgain }) => {
 
       {/* Chat List */}
       <Box sx={styles.chatList}>
-        {chats ? (
+        {chats && Array.isArray(chats) ? (
           <Stack spacing={1.5}>
             {chats.map((chat) => (
               <Box

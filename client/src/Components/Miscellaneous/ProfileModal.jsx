@@ -66,7 +66,7 @@ const ProfileModal = ({ user, children }) => {
       })
         .then((res) => res.json())
         .then((data) => {
-          setPicUrl(data.url.toString());
+          setPicUrl(data.secure_url.toString());
           setUploadingPic(false);
           toast.success("Image uploaded successfully");
         })
