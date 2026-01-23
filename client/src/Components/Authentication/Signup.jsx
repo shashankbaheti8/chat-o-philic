@@ -65,10 +65,10 @@ const Signup = () => {
     if (file.type === "image/jpeg" || file.type === "image/png") {
       const data = new FormData();
       data.append("file", file);
-      data.append("upload_preset", process.env.REACT_APP_PRESET_NAME);
-      data.append("cloud_name", process.env.REACT_APP_CLOUD_NAME);
+      data.append("upload_preset", import.meta.env.VITE_PRESET_NAME);
+      data.append("cloud_name", import.meta.env.VITE_CLOUD_NAME);
 
-      fetch(process.env.REACT_APP_CLOUDINARY_URL, {
+      fetch(import.meta.env.VITE_CLOUDINARY_URL, {
         method: "POST",
         body: data,
       })

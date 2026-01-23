@@ -3,6 +3,7 @@ import {
   Avatar,
   Typography,
   Box,
+  Badge,
 } from "@mui/material";
 import { COLORS } from "../constants";
 import { useThemeMode } from "../Context/ThemeProvider";
@@ -23,13 +24,13 @@ const ChatCard = ({ chat, selected, onClick, loggedUser }) => {
   };
 
   const getLastMessagePreview = () => {
-    if (!chat.latestMessage) return "No messages yet";
+    if (!chat.latestMessage || !chat.latestMessage.content) return "No messages yet";
     const content = chat.latestMessage.content;
     return content.length > 40 ? content.substring(0, 40) + "..." : content;
   };
 
   const getTimeStamp = () => {
-    if (!chat.latestMessage) return "";
+    if (!chat.latestMessage || !chat.latestMessage.createdAt) return "";
     const date = new Date(chat.latestMessage.createdAt);
     const now = new Date();
     const diff = now - date;
@@ -74,19 +75,34 @@ const ChatCard = ({ chat, selected, onClick, loggedUser }) => {
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
-        {/* Avatar with online status */}
-        <Avatar
-          src={getChatAvatar()}
-          alt={getChatName()}
-          sx={{ 
-            width: 56, 
-            height: 56,
-            border: `2px solid ${selected ? COLORS.accent : "transparent"}`,
-            transition: "border-color 0.3s ease",
+        {/* Avatar with unread badge */}
+        <Badge
+          badgeContent={chat.unreadCount || 0}
+          color="error"
+          max={99}
+          sx={{
+            "& .MuiBadge-badge": {
+              background: mode === "dark"
+                ? `linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.accentLight} 100%)`
+                : `linear-gradient(135deg, #EF4444 0%, #DC2626 100%)`,
+              fontWeight: 700,
+              fontSize: "0.7rem",
+            },
           }}
         >
-          {getChatName()[0]}
-        </Avatar>
+          <Avatar
+            src={getChatAvatar()}
+            alt={getChatName()}
+            sx={{ 
+              width: 56, 
+              height: 56,
+              border: `2px solid ${selected ? COLORS.accent : "transparent"}`,
+              transition: "border-color 0.3s ease",
+            }}
+          >
+            {getChatName()[0]}
+          </Avatar>
+        </Badge>
 
         {/* Chat info */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -126,15 +142,12 @@ const ChatCard = ({ chat, selected, onClick, loggedUser }) => {
               fontSize: "0.875rem",
             }}
           >
-            {chat.latestMessage?.sender.name && (
+            {chat.isGroupChat && chat.latestMessage?.sender?.name && (
               <strong>{chat.latestMessage.sender.name}: </strong>
             )}
             {getLastMessagePreview()}
           </Typography>
         </Box>
-
-        {/* Unread badge (placeholder for future) */}
-        {/* <Badge badgeContent={3} color="error" /> */}
       </Stack>
     </Box>
   );

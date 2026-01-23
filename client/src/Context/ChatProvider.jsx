@@ -6,16 +6,25 @@ const ChatContext = createContext();
 const ChatProvider = ({ children }) => {
   const [selectedChat, setSelectedChat] = useState();
   const [user, setUser] = useState();
-  const [notification, setNotification] = useState([]);
   const [chats, setChats] = useState();
 
   const navigate = useNavigate();
+
+  const [notification, setNotification] = useState([]);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("userInfo"));
     setUser(storedUser);
     if (!storedUser) navigate("/");
   }, [navigate]);
+
+  useEffect(() => {
+    if (notification.length > 0) {
+      document.title = `(${notification.length}) New Messages | Chat-o-Philic`;
+    } else {
+      document.title = "Chat-o-Philic";
+    }
+  }, [notification]);
 
   return (
     <ChatContext.Provider
@@ -24,10 +33,10 @@ const ChatProvider = ({ children }) => {
         setSelectedChat,
         user,
         setUser,
-        notification,
-        setNotification,
         chats,
         setChats,
+        notification,
+        setNotification,
       }}
     >
       {children}

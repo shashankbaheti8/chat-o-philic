@@ -30,9 +30,6 @@ const UserListItem = ({ user, handleFunction }) => {
         <Typography variant="body1" fontWeight={500}>
           {user.name}
         </Typography>
-        <Typography variant="caption">
-          <strong>Email:</strong> {user.email}
-        </Typography>
       </Box>
     </Paper>
   );

@@ -59,8 +59,8 @@ function Homepage() {
     },
     {
       icon: SecurityRounded,
-      title: "Secure & Private",
-      description: "Your messages are encrypted and secure"
+      title: "User Search",
+      description: "Quickly find and connect with other users to start chatting"
     }
   ];
 

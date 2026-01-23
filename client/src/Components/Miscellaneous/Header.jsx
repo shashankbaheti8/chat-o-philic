@@ -3,7 +3,6 @@ import {
   Toolbar,
   Typography,
   IconButton,
-  Badge,
   Menu,
   MenuItem,
   Drawer,
@@ -14,84 +13,37 @@ import {
   InputAdornment,
   Stack,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
-  MoreVert as MoreVertIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "../../axios";
-import ChatLoading from "../ChatLoading";
+import axios from "../../axios";
 import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../../Context/ChatProvider";
 import ProfileModal from "./ProfileModal";
+import SearchDrawer from "./SearchDrawer";
 import { getSender } from "../../Config/ChatLogics";
 import { COLORS } from "../../constants";
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingChat, setLoadingChat] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const {
-    setSelectedChat,
     user,
-    notification,
-    setNotification,
-    chats,
-    setChats,
   } = ChatState();
 
   const navigate = useNavigate();
-
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-
-    try {
-      setLoading(true);
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
-      setSearchResult(data);
-    } catch (error) {
-      console.error("Search failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const accessChat = async (userId) => {
-    try {
-      setLoadingChat(true);
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.post(`/api/chat`, { userId }, config);
-      if (!chats.find((c) => c._id === data._id)) {
-        setChats([data, ...chats]);
-      }
-      setSelectedChat(data);
-      setDrawerOpen(false);
-    } catch (error) {
-      console.error("Error creating chat");
-    } finally {
-      setLoadingChat(false);
-    }
-  };
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
@@ -141,33 +93,6 @@ const Header = () => {
             }}
           >
             <SearchIcon />
-          </IconButton>
-
-          {/* Notifications */}
-          <IconButton
-            onClick={(e) => setNotifAnchorEl(e.currentTarget)}
-            sx={{
-              mr: 1,
-              color: COLORS.textSecondary,
-              transition: "all 0.2s ease",
-              "&:hover": {
-                color: COLORS.accent,
-                backgroundColor: "rgba(59, 130, 246, 0.1)",
-                transform: "scale(1.1)",
-              },
-            }}
-          >
-            <Badge
-              badgeContent={notification.length}
-              sx={{
-                "& .MuiBadge-badge": {
-                  background: `linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.primary} 100%)`,
-                  boxShadow: `0 0 8px ${COLORS.secondary}`,
-                },
-              }}
-            >
-              <NotificationsIcon />
-            </Badge>
           </IconButton>
 
           {/* Profile Menu */}
@@ -226,7 +151,10 @@ const Header = () => {
             </ProfileModal>
             <Divider sx={{ borderColor: COLORS.divider }} />
             <MenuItem
-              onClick={logoutHandler}
+              onClick={() => {
+                setAnchorEl(null);
+                setLogoutDialogOpen(true);
+              }}
               sx={{
                 color: COLORS.secondary,
                 "&:hover": {
@@ -239,110 +167,58 @@ const Header = () => {
             </MenuItem>
           </Menu>
 
-          {/* Notifications Menu */}
-          <Menu
-            anchorEl={notifAnchorEl}
-            open={Boolean(notifAnchorEl)}
-            onClose={() => setNotifAnchorEl(null)}
+          {/* Logout Confirmation Dialog */}
+          <Dialog
+            open={logoutDialogOpen}
+            onClose={() => setLogoutDialogOpen(false)}
             PaperProps={{
               sx: {
-                bgcolor: "background.paper",
-                mt: 1,
-                minWidth: 300,
-                maxHeight: 400,
-              },
+                borderRadius: "16px",
+                background: mode === "dark" ? COLORS.surfaceDark : "#FFFFFF",
+                backgroundImage: "none",
+                p: 2,
+              }
             }}
           >
-            {!notification.length && (
-              <MenuItem disabled sx={{ color: COLORS.textSecondary }}>
-                No new notifications
-              </MenuItem>
-            )}
-            {notification.map((notif) => (
-              <MenuItem
-                key={notif._id}
+            <DialogTitle sx={{ color: mode === "dark" ? COLORS.textPrimaryDark : COLORS.textPrimaryLight }}>
+              Confirm Logout
+            </DialogTitle>
+            <Typography sx={{ px: 3, pb: 2, color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight }}>
+              Are you sure you want to log out?
+            </Typography>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button 
+                onClick={() => setLogoutDialogOpen(false)}
+                sx={{ color: mode === "dark" ? COLORS.textSecondaryDark : COLORS.textSecondaryLight }}
+              >
+                Cancel
+              </Button>
+              <Button 
                 onClick={() => {
-                  setSelectedChat(notif.chat);
-                  setNotification(notification.filter((n) => n !== notif));
-                  setNotifAnchorEl(null);
+                  setLogoutDialogOpen(false);
+                  logoutHandler();
                 }}
+                variant="contained"
                 sx={{
-                  color: COLORS.textPrimary,
-                  "&:hover": {
-                    backgroundColor: "rgba(0, 229, 255, 0.1)",
-                  },
+                  bgcolor: COLORS.secondary,
+                  "&:hover": { bgcolor: "#D91B60" },
+                  borderRadius: "8px",
                 }}
               >
-                {notif.chat.isGroupChat
-                  ? `New message in ${notif.chat.chatName}`
-                  : `New message from ${getSender(user, notif.chat.users)}`}
-              </MenuItem>
-            ))}
-          </Menu>
+                Logout
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+
         </Toolbar>
       </AppBar>
 
       {/* Search Drawer */}
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 360,
-            background: COLORS.backgroundSecondary,
-            borderRight: `1px solid ${COLORS.borderSubtle}`,
-          },
-        }}
-      >
-        <Box sx={{ p: 3 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              color: COLORS.textPrimary,
-              mb: 3,
-            }}
-          >
-            Search Users
-          </Typography>
-
-          <TextField
-            fullWidth
-            placeholder="Search by name or email"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: COLORS.textSecondary }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ mb: 3 }}
-          />
-
-          {loading ? (
-            <ChatLoading />
-          ) : (
-            <Stack spacing={1}>
-              {searchResult?.map((searchUser) => (
-                <UserListItem
-                  key={searchUser._id}
-                  user={searchUser}
-                  handleFunction={() => accessChat(searchUser._id)}
-                />
-              ))}
-            </Stack>
-          )}
-          {loadingChat && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
-        </Box>
-      </Drawer>
+      <SearchDrawer 
+        isOpen={drawerOpen} 
+        onClose={() => setDrawerOpen(false)} 
+      />
     </>
   );
 };

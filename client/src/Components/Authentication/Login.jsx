@@ -14,12 +14,14 @@ import { toast } from "react-toastify";
 import axios from "../../axios";
 import { COLORS } from "../../constants";
 import { useThemeMode } from "../../Context/ThemeProvider";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { mode } = useThemeMode();
 
@@ -144,6 +146,7 @@ const Login = () => {
         <Button
           variant="text"
           size="small"
+          onClick={() => setShowForgotPassword(true)}
           sx={{ 
             textTransform: "none", 
             color: COLORS.accent,
@@ -197,6 +200,11 @@ const Login = () => {
       >
         {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
       </Button>
+
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </Stack>
   );
 };

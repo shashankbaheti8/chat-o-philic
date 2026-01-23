@@ -1,4 +1,6 @@
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay } from 'date-fns';
+
+export { isSameDay };
 
 /**
  * Get relative time string (e.g., "2m ago", "5h ago")

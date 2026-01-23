@@ -29,8 +29,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     selectedChat,
     setSelectedChat,
     user,
-    notification,
-    setNotification,
   } = ChatState();
 
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -40,6 +38,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const { mode } = useThemeMode();
@@ -59,11 +58,34 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         },
       };
       const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
-      setMessages(data);
+      // Backend returns { messages: [], pagination: {} } or similar structure
+      const messagesData = data.messages || (Array.isArray(data) ? data : []);
+      setMessages(messagesData);
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
+      
+      // Mark messages as read when opening chat
+      await markAsRead();
     } catch (error) {
       console.error("Failed to load messages:", error);
+    }
+  };
+
+  const markAsRead = async () => {
+    if (!selectedChat) return;
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      await axios.put(`/api/message/read/${selectedChat._id}`, {}, config);
+      socket.emit("message read", { 
+        chatId: selectedChat._id, 
+        userId: user._id 
+      });
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
     }
   };
 
@@ -85,7 +107,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
         setNewMessage("");
         socket.emit("new message", data);
-        setMessages((prev) => [...prev, data]);
+        setNewMessage("");
+        socket.emit("new message", data);
+        setMessages((prev) => (Array.isArray(prev) ? [...prev, data] : [data]));
       } catch (error) {
         console.error("Failed to send message:", error);
       }
@@ -102,13 +126,30 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket.connect();
     socket.emit("setup", user);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
+    socket.on("typing", (userName) => {
+      setIsTyping(true);
+      setTypingUser(userName || "Someone");
+    });
+    socket.on("stop typing", () => {
+      setIsTyping(false);
+      setTypingUser("");
+    });
+
+    // Listen for group notifications
+    socket.on("new group", (group) => {
+      setFetchAgain((prev) => !prev);
+    });
+
+    socket.on("added to group notification", ({ groupName, addedBy }) => {
+      setFetchAgain((prev) => !prev);
+    });
 
     return () => {
       socket.off("connected");
       socket.off("typing");
       socket.off("stop typing");
+      socket.off("new group");
+      socket.off("added to group notification");
     };
   }, [user]);
 
@@ -122,19 +163,18 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket.on("message received", (newMessageReceived) => {
       const current = selectedChatRef.current;
       if (!current || current._id !== newMessageReceived.chat._id) {
-        if (!notification.some((n) => n._id === newMessageReceived._id)) {
-          setNotification((prev) => [newMessageReceived, ...prev]);
-          setFetchAgain((prev) => !prev);
-        }
+        setFetchAgain((prev) => !prev);
       } else {
         setMessages((prev) => [...prev, newMessageReceived]);
+        // Mark as read when message is received in active chat
+        markAsRead();
       }
     });
 
     return () => {
       socket.off("message received");
     };
-  }, [notification, setNotification, setFetchAgain]);
+  }, [setFetchAgain]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -164,7 +204,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
     if (!typing) {
       setTyping(true);
-      socket.emit("typing", selectedChat._id);
+      socket.emit("typing", selectedChat._id, user.name);
     }
 
     const lastTypingTime = new Date().getTime();
@@ -231,8 +271,33 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   ? getSender(user, selectedChat.users)
                   : selectedChat.chatName}
               </Typography>
-              <Typography variant="caption" sx={{ color: COLORS.textSecondaryLight, fontSize: "0.8rem", height: "1.2em", display: "block" }}>
-                {isTyping ? "typing..." : ""}
+              <Typography variant="caption" sx={{ color: COLORS.textSecondaryLight, fontSize: "0.8rem", height: "1.2em", display: "flex", alignItems: "center", gap: 0.5 }}>
+                {isTyping && (
+                  <>
+                    <span>{selectedChat.isGroupChat ? `${typingUser} is typing` : "typing"}</span>
+                    <Box component="span" sx={{
+                      display: "flex",
+                      gap: "2px",
+                      "& span": {
+                        width: "3px",
+                        height: "3px",
+                        borderRadius: "50%",
+                        bgcolor: "currentColor",
+                        animation: "typing 1.4s infinite ease-in-out both"
+                      },
+                      "& span:nth-of-type(1)": { animationDelay: "-0.32s" },
+                      "& span:nth-of-type(2)": { animationDelay: "-0.16s" },
+                      "@keyframes typing": {
+                        "0%, 80%, 100%": { transform: "scale(0)" },
+                        "40%": { transform: "scale(1)" }
+                      }
+                    }}>
+                      <span />
+                      <span />
+                      <span />
+                    </Box>
+                  </>
+                )}
               </Typography>
             </Box>
 

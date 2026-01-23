@@ -19,7 +19,6 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import {
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
   Person as PersonIcon,
   Logout as LogoutIcon,
   Close as CloseIcon,
@@ -35,6 +34,7 @@ import { toast } from "react-toastify";
 import ChatLoading from "../Components/ChatLoading";
 import UserListItem from "../Components/userAvatar/UserListItem";
 import ProfileModal from "../Components/Miscellaneous/ProfileModal";
+import SearchDrawer from "../Components/Miscellaneous/SearchDrawer";
 import { getSender } from "../Config/ChatLogics";
 import GroupChatModal from "../Components/Miscellaneous/GroupChatModal";
 import AddIcon from "@mui/icons-material/Add";
@@ -56,11 +56,7 @@ const ChatPage = () => {
   const [loggedUser, setLoggedUser] = useState();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingChat, setLoadingChat] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [notifAnchorEl, setNotifAnchorEl] = useState(null);
 
   const { 
     user, 
@@ -68,8 +64,6 @@ const ChatPage = () => {
     setSelectedChat,
     chats,
     setChats,
-    notification,
-    setNotification
   } = ChatState();
   
   const { mode } = useThemeMode();
@@ -111,50 +105,12 @@ const ChatPage = () => {
     navigate("/");
   };
 
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      toast.warning("Please enter something in search");
-      return;
-    }
+  // Debounced Search
 
-    try {
-      setLoading(true);
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
-      setSearchResult(data);
-      setLoading(false);
-    } catch (error) {
-      toast.error("Failed to load search results");
-      setLoading(false);
-    }
-  };
 
-  const accessChat = async (userId) => {
-    try {
-      setLoadingChat(true);
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.post(`/api/chat`, { userId }, config);
+  // Removed manual handleSearch function as it is replaced by the effect
 
-      if (!chats.find((c) => c._id === data._id)) {
-        setChats([data, ...chats]);
-      }
-      setSelectedChat(data);
-      setLoadingChat(false);
-      setDrawerOpen(false);
-    } catch (error) {
-      toast.error("Error fetching the chat");
-      setLoadingChat(false);
-    }
-  };
+
 
   if (!user) {
     return null;
@@ -236,24 +192,7 @@ const ChatPage = () => {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Notifications">
-            <IconButton
-              onClick={(e) => setNotifAnchorEl(e.currentTarget)}
-              sx={{
-                color: "rgba(255, 255, 255, 0.8)",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  color: "#FFFFFF",
-                  background: "rgba(255, 255, 255, 0.1)",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <Badge badgeContent={notification.length} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+
 
           <Tooltip title={user?.name} arrow>
             <Avatar
@@ -411,85 +350,10 @@ const ChatPage = () => {
       {/* -------------------- DRAWERS & MENUS -------------------- */}
 
       {/* Search Drawer */}
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 320,
-            background: mode === "dark" ? COLORS.surfaceDark : "#FFFFFF",
-            borderRight: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
-          }
-        }}
-      >
-        <Box sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%" }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Typography variant="h6" fontWeight={700}>Search Users</Typography>
-            <IconButton onClick={() => setDrawerOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="small"
-              placeholder="Name or Email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "text.secondary" }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                }
-              }}
-            />
-            <Button 
-              variant="contained" 
-              onClick={handleSearch}
-              sx={{ 
-                minWidth: "auto", 
-                px: 2,
-                borderRadius: "12px",
-                background: COLORS.accent 
-              }}
-            >
-              Go
-            </Button>
-          </Box>
-
-          {loading ? (
-            <ChatLoading />
-          ) : (
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
-              <Stack spacing={1}>
-                {searchResult?.map((user) => (
-                  <UserListItem
-                    key={user._id}
-                    user={user}
-                    handleFunction={() => accessChat(user._id)}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          )}
-
-          {loadingChat && (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
-        </Box>
-      </Drawer>
+      <SearchDrawer 
+        isOpen={drawerOpen} 
+        onClose={() => setDrawerOpen(false)} 
+      />
 
       {/* Profile Menu */}
       <Menu
@@ -525,53 +389,7 @@ const ChatPage = () => {
         </MenuItem>
       </Menu>
 
-      {/* Notifications Menu */}
-      <Menu
-        anchorEl={notifAnchorEl}
-        open={Boolean(notifAnchorEl)}
-        onClose={() => setNotifAnchorEl(null)}
-        PaperProps={{
-          sx: {
-            mt: 1.5,
-            width: 320,
-            maxHeight: 400,
-            borderRadius: "12px",
-            background: mode === "dark" ? COLORS.surfaceDark : "#FFFFFF",
-            border: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-          }
-        }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Typography 
-          variant="subtitle2" 
-          fontWeight={700} 
-          sx={{ p: 2, borderBottom: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}
-        >
-          Notifications
-        </Typography>
-        {!notification.length && (
-          <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
-            <Typography variant="body2">No new notifications</Typography>
-          </Box>
-        )}
-        {notification.map((notif) => (
-          <MenuItem
-            key={notif._id}
-            onClick={() => {
-              setSelectedChat(notif.chat);
-              setNotification(notification.filter((n) => n !== notif));
-              setNotifAnchorEl(null);
-            }}
-            sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}
-          >
-            {notif.chat.isGroupChat
-              ? `New message in ${notif.chat.chatName}`
-              : `New message from ${getSender(user, notif.chat.users)}`}
-          </MenuItem>
-        ))}
-      </Menu>
+
 
     </Box>
   );
