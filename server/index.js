@@ -42,13 +42,13 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
 
-const __dirname1 = path.resolve();
+const paramsDir = path.resolve();
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname1, "/frontend/build")));
+  app.use(express.static(path.join(paramsDir, "/frontend/build")));
 
   app.get(/(.*)/, (req, res) =>
-    res.sendFile(path.resolve(__dirname1, "frontend", "build", "index.html"))
+    res.sendFile(path.resolve(paramsDir, "frontend", "build", "index.html"))
   );
 } else {
   app.get("/", (req, res) => {
@@ -83,25 +83,45 @@ io.on("connection", (socket) => {
 
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("User Joined Room: " + room);
   });
-  socket.on("typing", (room) => socket.in(room).emit("typing"));
+
+  socket.on("typing", (room, userName) => {
+    socket.in(room).emit("typing", userName);
+  });
+
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
   socket.on("new message", (newMessageRecieved) => {
-    var chat = newMessageRecieved.chat;
+    const chat = newMessageRecieved.chat;
 
-    if (!chat.users) return console.log("chat.users not defined");
+    if (!chat.users) return;
 
     chat.users.forEach((user) => {
       if (user._id == newMessageRecieved.sender._id) return;
 
-      socket.in(user._id).emit("message recieved", newMessageRecieved);
+      socket.in(user._id).emit("message received", newMessageRecieved);
+    });
+  });
+
+  socket.on("message read", ({ chatId, userId, messageIds }) => {
+    socket.in(chatId).emit("messages marked read", { userId, messageIds });
+  });
+
+  socket.on("group created", ({ group, members }) => {
+    members.forEach((memberId) => {
+      socket.in(memberId).emit("new group", group);
+    });
+  });
+
+  socket.on("user added to group", ({ groupId, groupName, userId, addedBy }) => {
+    socket.in(userId).emit("added to group notification", {
+      groupId,
+      groupName,
+      addedBy,
     });
   });
 
   socket.off("setup", () => {
-    console.log("USER DISCONNECTED");
     socket.leave(userData._id);
   });
 });

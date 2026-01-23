@@ -12,6 +12,12 @@ const allMessages = asyncHandler(async (req, res) => {
     // Get total count for pagination metadata
     const total = await Message.countDocuments({ chat: req.params.chatId });
 
+    // Mark messages as delivered to the current user (if not already)
+    await Message.updateMany(
+      { chat: req.params.chatId, deliveredTo: { $ne: req.user._id } },
+      { $addToSet: { deliveredTo: req.user._id } }
+    );
+
     // Fetch messages with pagination, sorted by newest first
     const messages = await Message.find({ chat: req.params.chatId })
       .sort({ createdAt: -1 }) // Newest first for pagination
@@ -41,7 +47,6 @@ const sendMessage = asyncHandler(async (req, res) => {
   const { content, chatId } = req.body;
 
   if (!content || !chatId) {
-    console.log("Invalid data passed into request");
     return res.sendStatus(400);
   }
 
@@ -50,6 +55,8 @@ const sendMessage = asyncHandler(async (req, res) => {
       sender: req.user._id,
       content,
       chat: chatId,
+      readBy: [req.user._id], // Initialize with sender
+      deliveredTo: [req.user._id], // Initialize with sender
     });
 
     const fullMessage = await Message.findById(newMessage._id)
@@ -69,4 +76,46 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { allMessages, sendMessage };
+const markMessagesAsRead = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+
+  try {
+    // Mark all messages in the chat as read by the current user
+    await Message.updateMany(
+      {
+        chat: chatId,
+        readBy: { $ne: req.user._id }, // Only update messages not already read
+      },
+      {
+        $addToSet: { readBy: req.user._id },
+      }
+    );
+
+    // Update the lastMessageSeenBy in the chat
+    const latestMessage = await Message.findOne({ chat: chatId })
+      .sort({ createdAt: -1 })
+      .select("_id");
+
+    if (latestMessage) {
+      await Chat.findByIdAndUpdate(chatId, {
+        $pull: { lastMessageSeenBy: { user: req.user._id } },
+      });
+
+      await Chat.findByIdAndUpdate(chatId, {
+        $push: {
+          lastMessageSeenBy: {
+            user: req.user._id,
+            message: latestMessage._id,
+          },
+        },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+module.exports = { allMessages, sendMessage, markMessagesAsRead };

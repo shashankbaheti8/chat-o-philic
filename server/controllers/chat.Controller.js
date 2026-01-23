@@ -6,7 +6,6 @@ const accessChat = asyncHandler(async (req, res) => {
   const { userId } = req.body;
 
   if (!userId) {
-    console.log("UserId param not sent with request");
     return res.sendStatus(400);
   }
 
@@ -48,20 +47,125 @@ const accessChat = asyncHandler(async (req, res) => {
   }
 });
 
+// Optimize fetchChats by using MongoDB Aggregation
 const fetchChats = asyncHandler(async (req, res) => {
   try {
-    Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
-      .populate("users", "-password")
-      .populate("groupAdmin", "-password")
-      .populate("latestMessage")
-      .sort({ updatedAt: -1 })
-      .then(async (results) => {
-        results = await User.populate(results, {
-          path: "latestMessage.sender",
-          select: "name pic email",
-        });
-        res.status(200).send(results);
-      });
+    const results = await Chat.aggregate([
+      // 1. Match chats where user is a participant
+      {
+        $match: {
+          users: { $elemMatch: { $eq: req.user._id } },
+        },
+      },
+      // 2. Populate users
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+      // 3. Populate groupAdmin
+      {
+        $lookup: {
+          from: "users",
+          localField: "groupAdmin",
+          foreignField: "_id",
+          as: "groupAdmin",
+        },
+      },
+      {
+        $unwind: {
+          path: "$groupAdmin",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // 4. Populate latestMessage
+      {
+        $lookup: {
+          from: "messages",
+          localField: "latestMessage",
+          foreignField: "_id",
+          as: "latestMessage",
+        },
+      },
+      {
+        $unwind: {
+          path: "$latestMessage",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // 5. Populate sender in latestMessage
+      {
+        $lookup: {
+          from: "users",
+          localField: "latestMessage.sender",
+          foreignField: "_id",
+          as: "latestMessage.sender",
+        },
+      },
+      {
+        $unwind: {
+          path: "$latestMessage.sender",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // 6. Project specific fields for users and groupAdmin
+      {
+        $project: {
+          chatName: 1,
+          isGroupChat: 1,
+          users: { _id: 1, name: 1, email: 1, pic: 1 },
+          groupAdmin: { _id: 1, name: 1, email: 1, pic: 1 },
+          latestMessage: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          lastMessageSeenBy: 1,
+        },
+      },
+      // 7. Sort by updatedAt descending
+      { $sort: { updatedAt: -1 } },
+    ]);
+
+    // 8. Calculate unread counts efficiently
+    // We still do this in parallel but optimize the logic
+    const chatsWithUnreadCount = await Promise.all(
+      results.map(async (chat) => {
+        // Filter out empty 1-on-1 chats
+        if (!chat.isGroupChat && !chat.latestMessage) {
+          return null;
+        }
+
+        const chatObj = { ...chat };
+        const Message = require("../models/message.Model");
+
+        // Find last seen message efficiently
+        const lastSeenEntry = chat.lastMessageSeenBy?.find(
+          (entry) => entry.user.toString() === req.user._id.toString()
+        );
+
+        let unreadCount = 0;
+        const countQuery = {
+          chat: chat._id,
+          sender: { $ne: req.user._id },
+        };
+
+        if (lastSeenEntry) {
+          countQuery._id = { $gt: lastSeenEntry.message };
+        }
+
+        unreadCount = await Message.countDocuments(countQuery);
+        chatObj.unreadCount = unreadCount;
+        
+        return chatObj;
+      })
+    );
+
+    // Filter nulls (empty 1-on-1 chats)
+    const finalResults = chatsWithUnreadCount.filter(chat => chat !== null);
+
+    res.status(200).send(finalResults);
   } catch (error) {
     res.status(400);
     throw new Error(error.message);
@@ -177,6 +281,29 @@ const addToGroup = asyncHandler(async (req, res) => {
   }
 });
 
+const updateGroupAdmin = asyncHandler(async (req, res) => {
+  const { chatId, userId } = req.body;
+
+  const updatedChat = await Chat.findByIdAndUpdate(
+    chatId,
+    {
+      groupAdmin: userId,
+    },
+    {
+      new: true,
+    }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!updatedChat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(updatedChat);
+  }
+});
+
 module.exports = {
   accessChat,
   fetchChats,
@@ -184,4 +311,5 @@ module.exports = {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  updateGroupAdmin,
 };

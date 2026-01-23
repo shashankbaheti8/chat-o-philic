@@ -1,145 +1,118 @@
-# 💬 Chat-o-Philic - Real-time Chat Application
+# Chat-o-Philic 💬
+A full-featured, real-time chat application built with the **MERN stack** (MongoDB, Express, React, Node.js). It offers a seamless messaging experience with modern features like group chats, real-time typing indicators, and secure authentication.
 
-A **full-stack real-time chat application** built with **React (Material UI)** and **Node.js + Express + MongoDB**. Supports **1-on-1 and group chats**, real-time messaging via **Socket.IO**, and user authentication.
+## 🚀 Features
 
-🔗 **Live Demo**:
-[https://chat-o-philic.vercel.app](https://chat-o-philic.vercel.app)
+-   **User Authentication**: Secure Login and Registration system using JWT.
+-   **Real-time Messaging**: Instant message delivery powered by **Socket.io**.
+-   **Group Chats**: Create collaborative groups, manage members, and rename conversations.
+-   **One-on-One Chat**: Private, secure direct messaging.
+-   **Typing Indicators**: Live visual feedback when someone is typing.
+-   **Read Receipts**: Stay updated with new messages.
+-   **Profile Management**: Upload profile pictures (via Cloudinary) and manage user details.
+-   **Interactive UI**: Beautiful, responsive interface built with **React**, **Material UI**, and **Tailwind CSS**.
+-   **Fast Performance**: Optimized frontend build using **Vite**.
 
----
+## 🛠️ Tech Stack
 
-## 🗂️ Table of Contents
+### Client (Frontend)
+-   **Vite**: Next Generation Frontend Tooling
+-   **React**: UI Library
+-   **Tailwind CSS**: Utility-first CSS framework
+-   **Material UI (@mui/material)**: Component Library
+-   **Socket.io-client**: Real-time bidirectional event-based communication
+-   **Axios**: Promise based HTTP client
+-   **React Router**: Declarative routing
+-   **React Toastify**: Elegant notifications
 
-* [✨ Features](#-features)
-* [🛠 Tech Stack](#-tech-stack)
-* [🚀 Setup Instructions](#-setup-instructions)
-  * [1. Clone Repository](#1-clone-repository)
-  * [2. Backend Setup](#2-backend-setup)
-  * [3. Frontend Setup](#3-frontend-setup)
-* [📦 Folder Structure](#-folder-structure)
-* [⚙️ Deployment](#️-deployment)
+### Server (Backend)
+-   **Node.js**: JavaScript runtime environment
+-   **Express**: Fast, unopinionated web framework
+-   **MongoDB & Mongoose**: NoSQL Database & Object Data Modeling
+-   **Socket.io**: Real-time communication engine
+-   **JWT (JSON Web Token)**: Secure Stateless Authentication
+-   **Bcrypt.js**: Password hashing and security
 
----
+## ⚙️ Installation & Setup
 
-## ✨ Features
+Follow these steps to get the project running locally.
 
-* 🔐 JWT-based Authentication
-* 👥 1-on-1 and Group Chat Support
-* 🔴 Real-time messaging with **Socket.IO**
-* 👤 Profile Viewing & Management
-* 📱 Responsive and Modern UI (Material UI)
-* ☁️ Persistent chat history via MongoDB
+### Prerequisites
+-   [Node.js](https://nodejs.org/) (v14+ recommended)
+-   [MongoDB](https://www.mongodb.com/) (Local or Atlas URI)
 
----
-
-## 🛠 Tech Stack
-
-| Frontend       | Backend            | Real-Time | Styling      |
-| -------------- | ------------------ | --------- | ------------ |
-| React.js       | Node.js            | Socket.IO | Material UI  |
-| Axios          | Express.js         |           | Poppins Font |
-| React Router   | MongoDB + Mongoose |           |              |
-| React Toastify | JWT Authentication |           |              |
-
----
-
-## 🚀 Setup Instructions
-
-### 1. Clone Repository
-
+### 1. Clone the repository
 ```bash
-git clone https://github.com/shashankbaheti8/chat-o-philic.git
+git clone https://github.com/yourusername/chat-o-philic.git
 cd chat-o-philic
 ```
 
----
-
 ### 2. Backend Setup
-
+Navigate to the `server` directory and install dependencies:
 ```bash
-cd backend
-# Fill in your MONGO_URI, JWT_SECRET, FRONTED_URL, and PORT
-
+cd server
 npm install
+```
+
+Create a `.env` file in the `server` directory:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+FRONTEND_URL=http://localhost:3000
+```
+> **Note**: Add email config variables if using features requiring email sending.
+
+Start the backend server:
+```bash
 npm run dev
 ```
-
-#### `.env` Format:
-
-```env
-PORT=
-MONGO_URI=
-JWT_SECRET=
-FRONTED_URL=
-```
-
----
 
 ### 3. Frontend Setup
-
+Open a new terminal, navigate to the `client` directory and install dependencies:
 ```bash
-cd ../frontend
-# Set the API base URL for local dev
-
+cd client
 npm install
+```
+
+Create a `.env` file in the `client` directory:
+```env
+VITE_BACKEND_URL=http://localhost:5000
+VITE_CLOUD_NAME=your_cloudinary_cloud_name
+VITE_PRESET_NAME=your_cloudinary_upload_preset
+VITE_CLOUDINARY_URL=https://api.cloudinary.com/v1_1/your_cloud_name/image/upload
+```
+
+Start the development server:
+```bash
 npm run dev
 ```
 
-#### `.env` Format:
+The application will be available at [http://localhost:3000](http://localhost:3000).
 
-```env
-REACT_APP_BACKEND_URL=
-REACT_APP_CLOUD_NAME=
-REACT_APP_PRESET_NAME=
-REACT_APP_CLOUDINARY_URL=
-```
+## 📂 Project Structure
 
-Open [http://localhost:5173](http://localhost:5173) to use the app locally.
-
----
-
-## 📦 Folder Structure
-
-### 📁 Frontend (`/frontend`)
-
-```
-src/
-├── components/
-│   ├── Authentication/
-│   ├── Chatbox.jsx
-│   ├── MyChats.jsx
+```text
+chat-o-philic/
+├── client/                 # Frontend (Vite + React)
+│   ├── src/
+│   │   ├── Components/     # Reusable UI components
+│   │   ├── Context/        # React Context (State Management)
+│   │   ├── Pages/          # Application Pages
+│   │   └── ...
 │   └── ...
-├── Context/
-│   └── ChatProvider.jsx
-├── Pages/
-│   ├── HomePage.jsx
-│   └── ChatPage.jsx
-├── socket.js
-├── App.jsx
-└── main.jsx
+├── server/                 # Backend (Node + Express)
+│   ├── controllers/        # Route logic
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # API endpoints
+│   └── ...
+└── README.md               # Documentation
 ```
 
-### 📁 Backend (`/backend`)
+## 🤝 Contributing
 
-```
-backend/
-├── controllers/
-├── models/
-├── routes/
-├── middlewares/
-└── server.js
-```
+Contributions are welcome! Please fork the repository and submit a Pull Request.
 
----
+## 📄 License
 
-## ⚙️ Deployment
-
-### ✅ Frontend
-
-Deployed on **Vercel**
-
-
-### ✅ Backend
-
-Deployed on **Render**
-
----
+This project is licensed under the ISC License.
